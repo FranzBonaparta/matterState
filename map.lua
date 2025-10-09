@@ -1,6 +1,6 @@
 local Object = require("libs.classic")
 local Map=Object:extend()
-local Tile=require("tile")
+local Tile=require("tile2")
 
 function Map:new(x,y,amount)
 self.x=x
@@ -18,20 +18,26 @@ function Map:initTiles()
       local tile=Tile(coordX+self.x,coordY+self.y,size)
       if y==self.amount-1 then
         if x%4==0 or x%3==0 then
-          tile:initElements("stone")
+          tile.materials:initElements("stone")
         else
-          tile:initElements("soil")
+          tile.materials:initElements("soil")
         end
       elseif y< self.amount-1 and y>10  and x%5==0 then
-        tile:initElements("wood")
+        tile.materials:initElements("wood")
       elseif y==self.amount-2 or y== self.amount-3 and x%5>0 then
-                tile:initElements("carbon")
+                tile.materials:initElements("carbon")
       else
-        tile:initElements("oxygen")
+        tile.materials:initElements("oxygen")
       end
-      tile:initTooltipText()
       table.insert(self.tiles[y+1],tile)
     end
+  end
+  for _, line in ipairs(self.tiles) do
+    for _, tile in ipairs(line) do
+            tile:initTooltipText(self.tiles)
+
+    end
+    
   end
 end
 
@@ -46,16 +52,17 @@ function Map:draw()
       if tile.toolTip.isVisible then tile.toolTip:draw() return end
     end
   end
+
 end
 function Map:mousepressed(mx,my,button)
-  for _, line in ipairs(self.tiles) do
+ --[[ for _, line in ipairs(self.tiles) do
     for _, tile in ipairs(line) do
       tile:mousepressed(mx,my,button)
     end
-  end
+  end]]
 end
 function Map:update(dt)
-  for _, line in ipairs(self.tiles) do
+ for _, line in ipairs(self.tiles) do
     for _, tile in ipairs(line) do
       local neighbours=tile:getNeighbours(self.tiles)
       tile:update(dt,neighbours)

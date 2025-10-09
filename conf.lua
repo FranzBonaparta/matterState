@@ -1,6 +1,6 @@
 -- Configuration function of Love2D
 function love.conf(w)
-    w.title = ""
+    w.title = "Matter States"
     w.window.height = 800
     w.window.width = 1000
     w.version = "11.4"

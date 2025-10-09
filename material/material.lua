@@ -1,6 +1,6 @@
 local Object = require("libs.classic")
 local Material = Object:extend()
-local MaterialsTable = require("material.materialsTable")
+local MaterialsData = require("material.materialsData")
 
 function Material:new(x, y, size, name)
   self.x = x
@@ -21,7 +21,7 @@ function Material:new(x, y, size, name)
 end
 
 function Material:changeName(name)
-  local newMaterial = MaterialsTable.getMaterialByName(name)
+  local newMaterial = MaterialsData.getMaterialByName(name)
   if newMaterial then
     self.name = newMaterial.name
     self.state = newMaterial.state
