@@ -98,5 +98,12 @@ function Tile:update(dt, neighbours)
     self.toolTip:update(dt)
     self.materials:update(dt, neighbours)
 end
-
+function Tile:mousepressed(mx, my, button)
+    if self:mouseIsHover(mx, my) and button == 1 then
+        local randomX,randomY=math.random(4),math.random(4)
+        local randomElement=self.materials.elements[randomY][randomX]
+        randomElement:ignite()
+        self:initTooltipText()
+    end
+end
 return Tile

@@ -55,16 +55,16 @@ function Map:draw()
 
 end
 function Map:mousepressed(mx,my,button)
- --[[ for _, line in ipairs(self.tiles) do
+  for _, line in ipairs(self.tiles) do
     for _, tile in ipairs(line) do
       tile:mousepressed(mx,my,button)
     end
-  end]]
+  end
 end
 function Map:update(dt)
  for _, line in ipairs(self.tiles) do
     for _, tile in ipairs(line) do
-      local neighbours=tile:getNeighbours(self.tiles)
+      local neighbours,_=tile:getNeighbours(self.tiles)
       tile:update(dt,neighbours)
     end
   end

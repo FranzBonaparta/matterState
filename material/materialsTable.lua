@@ -23,6 +23,13 @@ function MaterialsTable:initElements(name)
   end
 end
 
+function MaterialsTable:getElementIndice(element)
+  local x, y = (element.x - self.x) / self.step,
+      (element.y - self.y) / self.step
+
+  return math.floor(x) + 1, math.floor(y) + 1
+end
+
 function MaterialsTable:canBurn()
   for _, line in ipairs(self.elements) do
     for _, element in ipairs(line) do
@@ -66,14 +73,43 @@ end
 
 --tiles= incoming neighbours from map
 function MaterialsTable:getNeighbours(neighbours, element)
-  local materialsNeighbours = {nil,nil,nil,nil}
+  local materialsNeighbours = {}
+  local directions = {
+    [1] = "left",
+    [2] = "up",
+    [3] = "right",
+    [4] = "down"
+  }
   --tiles=neighbours of self tile
-  local dx,dy={(element.x-8)/self.x,(element.x)/self.x,(element.x+8)/self.x,(element.x)/self.x},
-  {(element.y)/self.y,(element.y-8)/self.y,(element.y)/self.y,(element.y+8)/self.y}
-  for _, value in ipairs(self.elements) do
-
+  local indiceX, indiceY = self:getElementIndice(element)
+  local dx, dy = { indiceX - 1, indiceX, indiceX + 1, indiceX },
+      { indiceY, indiceY - 1, indiceY, indiceY + 1 }
+  local maxX = #self.elements[1]
+  local maxY = #self.elements
+  for i = 1, 4, 1 do
+    if dy[i] >= 1 and dx[i] >= 1
+        and dy[i] <= maxY and dx[i] <= maxX then
+      table.insert(materialsNeighbours, self.elements[dy[i]][dx[i]])
+    else
+      local neighbour = neighbours[i]
+      local nEIX = 0
+      nEIX = dx[i] < 1 and maxX or (dx[i] > maxX and 1 or dx[i])
+      local nEIY = 0
+      nEIY = dy[i] < 1 and maxY or (dy[i] > maxY and 1 or dy[i])
+      if neighbour and neighbour.elements and neighbour.elements[nEIY] and neighbour.elements[nEIY][nEIX] then
+        table.insert(materialsNeighbours, neighbour.elements[nEIY][nEIX])
+      else
+        table.insert(materialsNeighbours, {})
+      end
+    end
   end
-  return materialsNeighbours
+
+  return {
+    left  = materialsNeighbours[1],
+    up    = materialsNeighbours[2],
+    right = materialsNeighbours[3],
+    down  = materialsNeighbours[4]
+  }
 end
 
 function MaterialsTable:draw()
@@ -87,14 +123,34 @@ end
 function MaterialsTable:update(dt, tiles)
   self.coolDown = self.coolDown - dt
   if self.coolDown <= 0 then
-    if self:didBurn() then
-      local burnings = self:getBurningMaterials()
-      if #burnings == 0 then
+    --if self:didBurn() then
+    --local burnings = self:getBurningMaterials()
+    --if #burnings == 0 then
 
+    for _, line in ipairs(self.elements) do
+      for _, element in ipairs(line) do
+        local sumTemp = 0
+        local count = 0
+        local neighbours = self:getNeighbours(tiles, element)
+
+
+        for _, value in ipairs(neighbours) do
+          if value and value.temperature then
+            sumTemp = sumTemp + value.temperature
+            count = count + 1
+          end
+        end
+        if count > 0 then
+          local avgTemp = sumTemp / count
+          -- interpolation douce vers la température moyenne des voisins
+          element.temperature = element.temperature + (avgTemp - element.temperature) * 0.1
+        end
       end
-    else
-
     end
+
+    --end
+
+    --end
     self.coolDown = 0.5
   end
 end
