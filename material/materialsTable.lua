@@ -8,7 +8,7 @@ function MaterialsTable:new(x, y, size)
   self.size = size --32
   self.elements = {}
   self.step = 8
-  self.coolDown = 1
+  self.coolDown = 0.2
 end
 
 function MaterialsTable:initElements(name)
@@ -28,6 +28,12 @@ function MaterialsTable:getElementIndice(element)
       (element.y - self.y) / self.step
 
   return math.floor(x) + 1, math.floor(y) + 1
+end
+
+function MaterialsTable:ignite()
+  local randomX, randomY = math.random(4), math.random(4)
+  local randomElement = self.elements[randomY][randomX]
+  randomElement:ignite()
 end
 
 function MaterialsTable:canBurn()
@@ -61,6 +67,7 @@ function MaterialsTable:getBurningMaterials()
       end
     end
   end
+  return burnings
 end
 
 function MaterialsTable:isOnBorder(x, y)
@@ -69,6 +76,24 @@ function MaterialsTable:isOnBorder(x, y)
     return true
   end
   return false
+end
+
+function MaterialsTable:getDirectNeighbours(element)
+  local materialsNeighbours = {}
+  local maxX = #self.elements[1]
+  local maxY = #self.elements
+  local indiceX, indiceY = self:getElementIndice(element)
+  local dx, dy = { indiceX - 1, indiceX, indiceX + 1, indiceX },
+      { indiceY, indiceY - 1, indiceY, indiceY + 1 }
+  for i = 1, 4, 1 do
+    if dy[i] >= 1 and dx[i] >= 1
+        and dy[i] <= maxY and dx[i] <= maxX then
+      table.insert(materialsNeighbours, self.elements[dy[i]][dx[i]])
+    else
+      table.insert(materialsNeighbours, nil)
+    end
+  end
+  return materialsNeighbours
 end
 
 --tiles= incoming neighbours from map
@@ -120,21 +145,40 @@ function MaterialsTable:draw()
   end
 end
 
-function MaterialsTable:update(dt, tiles)
+function MaterialsTable:update(dt)
   self.coolDown = self.coolDown - dt
   if self.coolDown <= 0 then
-    --if self:didBurn() then
-    --local burnings = self:getBurningMaterials()
-    --if #burnings == 0 then
+    if self:didBurn() then
+      local burnings = self:getBurningMaterials()
+      for _, burning in ipairs(burnings) do
+        local neighbours = self:getDirectNeighbours(burning)
+        for _, element in ipairs(neighbours) do
+          if element and element.temperature and not element.isBurning then
+            element.temperature = element.temperature + 10
 
+            if element.temperature >= 400 then
+              element:ignite()
+            end
+          end
+        end
+      end
+    end
+    self.coolDown = 0.5
+  end
+end
+
+--if self:didBurn() then
+--local burnings = self:getBurningMaterials()
+--if #burnings == 0 then
+--[[
     for _, line in ipairs(self.elements) do
       for _, element in ipairs(line) do
         local sumTemp = 0
         local count = 0
-        local neighbours = self:getNeighbours(tiles, element)
+        local elementNeighbours = self:getNeighbours(neighbours, element)
 
 
-        for _, value in ipairs(neighbours) do
+        for _, value in ipairs(elementNeighbours) do
           if value and value.temperature then
             sumTemp = sumTemp + value.temperature
             count = count + 1
@@ -145,14 +189,12 @@ function MaterialsTable:update(dt, tiles)
           -- interpolation douce vers la température moyenne des voisins
           element.temperature = element.temperature + (avgTemp - element.temperature) * 0.1
         end
+        element:update(dt)
       end
-    end
+    end]]
 
-    --end
+--end
 
-    --end
-    self.coolDown = 0.5
-  end
-end
+--end
 
 return MaterialsTable

@@ -62,6 +62,7 @@ function Material:ignite()
   if self.isFlammable and not self.isBurning then
     self.temperature = 400
     self.isBurning = true
+    self:setColor({255,0,0})
   end
 end
 
