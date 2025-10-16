@@ -169,34 +169,4 @@ function MaterialsTable:update(dt,tiles)
   end
 end
 
---if self:didBurn() then
---local burnings = self:getBurningMaterials()
---if #burnings == 0 then
---[[
-    for _, line in ipairs(self.elements) do
-      for _, element in ipairs(line) do
-        local sumTemp = 0
-        local count = 0
-        local elementNeighbours = self:getNeighbours(neighbours, element)
-
-
-        for _, value in ipairs(elementNeighbours) do
-          if value and value.temperature then
-            sumTemp = sumTemp + value.temperature
-            count = count + 1
-          end
-        end
-        if count > 0 then
-          local avgTemp = sumTemp / count
-          -- interpolation douce vers la température moyenne des voisins
-          element.temperature = element.temperature + (avgTemp - element.temperature) * 0.1
-        end
-        element:update(dt)
-      end
-    end]]
-
---end
-
---end
-
 return MaterialsTable
