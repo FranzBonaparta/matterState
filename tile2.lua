@@ -19,8 +19,8 @@ function Tile:initTooltipText(map)
     local total = 0
     local tempSum = 0
     -- average temperature
-    local _, neighboursCount = self:getNeighbours(map)
-    self.neighboursCount = neighboursCount
+    local neighbours = self:getNeighbours(map)
+    self.neighboursCount = #neighbours
     -- text & tooltip construction
     local lines = {}
     table.insert(lines, string.format("[%i %i]", a, b))
@@ -84,17 +84,14 @@ function Tile:getNeighbours(map)
 
     local dx = { coordX - 1, coordX, coordX + 1, coordX }
     local dy = { coordY, coordY - 1, coordY, coordY + 1 }
-    local count = 0
+    local directions={"left","up","right","down"}
     for i = 1, 4, 1 do
         if dy[i] >= 0 and dx[i] >= 0 and dy[i] < mapHeight and dx[i] < mapWidth then
             local tile = map[dy[i] + 1][dx[i] + 1]
-            table.insert(neighbours, tile)
-            count = count + 1
-        else
-            table.insert(neighbours, {})
+            table.insert(neighbours, {direction=directions[i],value=tile})
         end
     end
-    return neighbours, count
+    return neighbours
 end
 
 function Tile:draw()
@@ -109,7 +106,8 @@ end
 
 function Tile:update(dt, tiles)
     self.toolTip:update(dt)
-    self.materials:update(dt)
+    local neighbours,_=self:getNeighbours(tiles)
+    self.materials:update(dt,neighbours)
 
 end
 

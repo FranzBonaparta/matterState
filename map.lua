@@ -73,7 +73,6 @@ function Map:update(dt)
       if tile:mouseIsHover(mx, my) then
         tile:initTooltipText(self.tiles)
       end
-        tile.materials:update(dt)
     end
   end
 end

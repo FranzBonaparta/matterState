@@ -16,7 +16,8 @@ function Material:new(x, y, size, name)
   self.density = 5
   self.conduction = 0
   self.isBurning = false
-
+  self.maxTemperature=self.isFlammable and 1000 or 600
+  self.time = math.random() * 10
   self:changeName(name)
 end
 
@@ -55,14 +56,33 @@ function Material:setColor(colorArray)
 end
 
 function Material:update(dt)
-
+  if self.isBurning or self.temperature >=self.ignitionPoint then
+    self.time=self.time+dt
+    self:setColor(self:getBurningColor())
+  end
+end
+function Material:getBurningColor()
+  local index = math.floor(self.time * 5) % 3 + 1
+  local colors = {
+    {255, 0, 0},
+    {255, 128, 0},
+    {255, 255, 0}
+  }
+  return colors[index]
 end
 
+function Material:changeTemperature(amount)
+  if not self.isBurning then
+    self.temperature=math.min(self.temperature+amount,self.maxTemperature)
+    if self.temperature >=self.ignitionPoint then
+      self:ignite()
+    end
+  end
+end
 function Material:ignite()
   if self.isFlammable and not self.isBurning then
     self.temperature = 400
     self.isBurning = true
-    self:setColor({255,0,0})
   end
 end
 
