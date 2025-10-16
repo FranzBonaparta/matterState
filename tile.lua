@@ -1,43 +1,70 @@
 local Object = require("libs.classic")
 local Tooltip = require("libs.tooltip")
 local Tile = Object:extend()
-local Element = require("material.material")
-
+local MaterialsTable = require("material.materialsTable")
 function Tile:new(x, y, size)
     self.x = x
     self.y = y
     self.size = size
-    self.element = nil
+    self.materials = MaterialsTable(self.x, self.y, self.size)
     self.toolTip = Tooltip("", self, 0.2)
     self.borderColor = { 255, 0, 0 }
-    self.coolDown = 1
+    self.neighboursCount = 0
 end
 
-function Tile:initTooltipText()
-    self.toolTip.text = ""
+function Tile:initTooltipText(map)
     local a, b = self:getCoords()
-    -- construction du texte du tooltip
+
+    local counts = {}
+    local total = 0
+    local tempSum = 0
+    -- average temperature
+    local neighbours = self:getNeighbours(map)
+    self.neighboursCount = #neighbours
+    -- text & tooltip construction
     local lines = {}
     table.insert(lines, string.format("[%i %i]", a, b))
-    --table.insert(lines, string.format("%i materials", total))
-    table.insert(lines, string.format("Avg Temp: %.2f°C", self.element.temperature))
-    table.insert(lines, self.element.name)
-    table.insert(lines,self.element.isBurning==true and "burn" or "stable")
+
+    for _, row in ipairs(self.materials.elements) do
+        for _, material in ipairs(row) do
+            total = total + 1
+            tempSum = tempSum + material.temperature
+
+            -- names count
+            counts[material.name] = (counts[material.name] or 0) + 1
+        end
+    end
+    local avgTemp = total > 0 and (tempSum / total) or 0
+    table.insert(lines, string.format("%i materials", total))
+    table.insert(lines, string.format("Avg Temp: %.1f°C", avgTemp))
+    table.insert(lines, string.format("NeighboursAmount: %i", self.neighboursCount))
+    table.insert(lines,
+        string.format("[%.1f°C,%.1f°C,%.1f°C,%.1f°C]", self.materials.elements[1][1].temperature,
+            self.materials.elements[1][2].temperature, self.materials.elements[1][3].temperature,
+            self.materials.elements[1][4].temperature))
+    table.insert(lines,
+        string.format("[%.1f°C,%.1f°C,%.1f°C,%.1f°C]", self.materials.elements[2][1].temperature,
+            self.materials.elements[2][2].temperature, self.materials.elements[2][3].temperature,
+            self.materials.elements[2][4].temperature))
+    table.insert(lines,
+        string.format("[%.1f°C,%.1f°C,%.1f°C,%.1f°C]", self.materials.elements[3][1].temperature,
+            self.materials.elements[3][2].temperature, self.materials.elements[3][3].temperature,
+            self.materials.elements[3][4].temperature))
+    table.insert(lines,
+        string.format("[%.1f°C,%.1f°C,%.1f°C,%.1f°C]", self.materials.elements[4][1].temperature,
+            self.materials.elements[4][2].temperature, self.materials.elements[4][3].temperature,
+            self.materials.elements[4][4].temperature))
+    -- adding percentages
+    for name, count in pairs(counts) do
+        local percent = (count / total) * 100
+        table.insert(lines, string.format("%s: %.1f%%", name, percent))
+    end
+
     self.toolTip.text = table.concat(lines, "\n")
 end
 
-function Tile:initElements(name)
-    self.element = Element(self.x, self.y, self.size, name)
-end
-
-function Tile:draw()
-    self.element:draw()
-    local r, g, b = self.borderColor[1] / 255, self.borderColor[2] / 255, self.borderColor[3] / 255
-
-    love.graphics.setColor(r, g, b)
-    love.graphics.rectangle("line", self.x, self.y, self.size, self.size)
-
-    love.graphics.setColor(1, 1, 1)
+function Tile:getCoords()
+    return self.x / 32, self.y / 32
 end
 
 function Tile:mouseIsHover(mx, my)
@@ -49,100 +76,45 @@ function Tile:mouseIsHover(mx, my)
     return isHover
 end
 
-function Tile:getCoords()
-    return self.x / 32, self.y / 32
-end
-
 function Tile:getNeighbours(map)
     local neighbours = {}
-    for y, line in ipairs(map) do
-        for x, tile in ipairs(line) do
-            if tile ~= self then
-                local dx = math.abs(tile.x - self.x)
-                local dy = math.abs(tile.y - self.y)
-                if dx <= self.size and dy <= self.size then
-                    table.insert(neighbours, tile)
-                end
-            end
+    local coordX, coordY = self:getCoords()
+    --get map size
+    local mapHeight, mapWidth = #map, #map[1]
+
+    local dx = { coordX - 1, coordX, coordX + 1, coordX }
+    local dy = { coordY, coordY - 1, coordY, coordY + 1 }
+    local directions={"left","up","right","down"}
+    for i = 1, 4, 1 do
+        if dy[i] >= 0 and dx[i] >= 0 and dy[i] < mapHeight and dx[i] < mapWidth then
+            local tile = map[dy[i] + 1][dx[i] + 1]
+            table.insert(neighbours, {direction=directions[i],value=tile})
         end
     end
     return neighbours
 end
 
-function Tile:canBurn(neighbours)
-    local oxidants = {}
-    for index, tile in ipairs(neighbours) do
-        if tile.element.isOxidant then
-            table.insert(oxidants, tile)
-        end
-    end
-    if self.element:canBurn() and #oxidants > 0 and not self.element.isBurning then
-        self.element:ignite()
-        self:initTooltipText()
-    end
+function Tile:draw()
+    self.materials:draw()
+    local r, g, b = self.borderColor[1] / 255, self.borderColor[2] / 255, self.borderColor[3] / 255
+
+    love.graphics.setColor(r, g, b)
+    love.graphics.rectangle("line", self.x, self.y, self.size, self.size)
+
+    love.graphics.setColor(1, 1, 1)
 end
 
-function Tile:getBurningNeighbours(neighbours)
-    local burnings = {}
-    for _, neighbour in ipairs(neighbours) do
-        if neighbour.element.isBurning then
-            table.insert(burnings, neighbour)
-        end
-    end
-    return burnings
-end
-function Tile:didBurn()
-    if not self.element.isBurning and self.element:canBurn() then
-        self.element.isBurning=true
-    end
-end
-function Tile:update(dt, neighbours)
+function Tile:update(dt, tiles)
     self.toolTip:update(dt)
-    self.coolDown = self.coolDown - dt
-    if self.coolDown <= 0 and #neighbours > 1 then
-        --print(#neighbours.." neighbours")
-        local burnings = self:getBurningNeighbours(neighbours)
-        local variation = 0
-        if self.element.isBurning then
-            if #burnings == 0 then
-                variation =  (self.element.temperature - self.element.ignitionPoint)/self.element.ignitionPoint
-                self.element.temperature = self.element.temperature + variation
-            else
-                for _, tile in ipairs(burnings) do
-                    local element = tile.element
-                    variation = variation + ( (element.temperature - element.ignitionPoint)/element.ignitionPoint)
-                end
-                variation = (variation / #burnings) +
-                ((self.element.temperature - self.element.ignitionPoint)/self.element.ignitionPoint)
-                self.element.temperature = self.element.temperature + variation/2
-            end
-        else -- not self.element.isBurning
-            if #burnings == 0 then
-                for _, tile in ipairs(neighbours) do
-                    local element = tile.element
+    local neighbours,_=self:getNeighbours(tiles)
+    self.materials:update(dt,neighbours)
 
-                    variation = variation + element.temperature
-                end
-                self.element.temperature = (self.element.temperature + variation) / (#neighbours+1)
-            else
-                for _, tile in ipairs(burnings) do
-                    local element = tile.element
-                    variation = variation + ((element.temperature - element.ignitionPoint)/element.ignitionPoint  )
-                end
-                variation = variation / #burnings
-                self.element.temperature = self.element.temperature + variation
-            end
-        end
-        self:didBurn()
-        self:initTooltipText()
-        self.coolDown = 0.5
-    end
 end
 
-function Tile:mousepressed(mx, my, button)
+function Tile:mousepressed(mx, my, button, tiles)
     if self:mouseIsHover(mx, my) and button == 1 then
-        self.element:ignite()
-        self:initTooltipText()
+        self.materials:ignite()
+        self:initTooltipText(tiles)
     end
 end
 

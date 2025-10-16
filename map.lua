@@ -1,6 +1,6 @@
 local Object = require("libs.classic")
 local Map = Object:extend()
-local Tile = require("tile2")
+local Tile = require("tile")
 
 function Map:new(x, y, amount)
   self.x = x
