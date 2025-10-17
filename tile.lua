@@ -106,7 +106,7 @@ end
 
 function Tile:update(dt, tiles)
     self.toolTip:update(dt)
-    local neighbours,_=self:getNeighbours(tiles)
+    local neighbours=self:getNeighbours(tiles)
     self.materials:update(dt,neighbours)
 
 end

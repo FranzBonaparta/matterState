@@ -1,7 +1,7 @@
 local Object = require("libs.classic")
 local MaterialsTable = Object:extend()
 local Element = require("material.material")
-
+local CombustionManager=require("combustionManager")
 function MaterialsTable:new(x, y, size)
   self.x = x
   self.y = y
@@ -31,44 +31,9 @@ function MaterialsTable:getElementIndice(element)
 end
 
 function MaterialsTable:ignite()
-  local randomX, randomY = math.random(4), math.random(4)
-  local randomElement = self.elements[randomY][randomX]
-  randomElement:ignite()
+  CombustionManager.ignite(self.elements)
 end
 
-function MaterialsTable:canBurn()
-  for _, line in ipairs(self.elements) do
-    for _, element in ipairs(line) do
-      if element.isOxidant then
-        return true
-      end
-    end
-  end
-  return false
-end
-
-function MaterialsTable:didBurn()
-  for _, line in ipairs(self.elements) do
-    for _, element in ipairs(line) do
-      if element.isBurning then
-        return true
-      end
-    end
-  end
-  return false
-end
-
-function MaterialsTable:getBurningMaterials()
-  local burnings = {}
-  for _, line in ipairs(self.elements) do
-    for _, element in ipairs(line) do
-      if element.isBurning then
-        table.insert(burnings, element)
-      end
-    end
-  end
-  return burnings
-end
 
 function MaterialsTable:isOnBorder(x, y)
   if x == self.x or y == self.y or
@@ -139,27 +104,7 @@ end
 function MaterialsTable:update(dt,tiles)
   self.coolDown = self.coolDown - dt
   if self.coolDown <= 0 then
-    if self:didBurn() then
-      local burnings = self:getBurningMaterials()
-      for _, burning in ipairs(burnings) do
-        local neighbours = self:getDirectNeighbours(burning)
-        for _, element in ipairs(neighbours) do
-          if element.value and element.value.temperature and element.value.changeTemperature then
-            element.value:changeTemperature(10)
-          end
-        end
-        if self:isOnBorder(burning.x,burning.y)then
-          neighbours=self:getNeighbours(tiles,burning)
-          for _, neighbour in ipairs(neighbours) do
-            if neighbour.value and neighbour.value.x and neighbour.value.y 
-            and neighbour.value.temperature and neighbour.value.changeTemperature then
-            neighbour.value:changeTemperature(10)
-          end
-          end
-        end
-
-      end
-    end
+    CombustionManager.update(dt,self,tiles)
     for _, line in ipairs(self.elements) do
       for _, element in ipairs(line) do
         element:update(dt)
