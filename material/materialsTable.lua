@@ -1,7 +1,8 @@
 local Object = require("libs.classic")
 local MaterialsTable = Object:extend()
 local Element = require("material.material")
-local CombustionManager=require("combustionManager")
+local CombustionManager = require("combustionManager")
+local DensityManager = require("densityManager")
 function MaterialsTable:new(x, y, size)
   self.x = x
   self.y = y
@@ -23,6 +24,11 @@ function MaterialsTable:initElements(name)
   end
 end
 
+function MaterialsTable:getFormattedElement(element)
+  local dx, dy = self:getElementIndice(element)
+  return { value = element, parentGrid = self.elements, dx = dx, dy = dy }
+end
+
 function MaterialsTable:getElementIndice(element)
   local x, y = (element.x - self.x) / self.step,
       (element.y - self.y) / self.step
@@ -33,7 +39,6 @@ end
 function MaterialsTable:ignite()
   CombustionManager.ignite(self.elements)
 end
-
 
 function MaterialsTable:isOnBorder(x, y)
   if x == self.x or y == self.y or
@@ -47,7 +52,7 @@ function MaterialsTable:getDirectNeighbours(element)
   local materialsNeighbours = {}
   local maxX = #self.elements[1]
   local maxY = #self.elements
-  local directions={"left","up","right","down"}
+  local directions = { "left", "up", "right", "down" }
 
   local indiceX, indiceY = self:getElementIndice(element)
   local dx, dy = { indiceX - 1, indiceX, indiceX + 1, indiceX },
@@ -55,7 +60,13 @@ function MaterialsTable:getDirectNeighbours(element)
   for i = 1, 4, 1 do
     if dy[i] >= 1 and dx[i] >= 1
         and dy[i] <= maxY and dx[i] <= maxX then
-      table.insert(materialsNeighbours, {direction=directions[i],value=self.elements[dy[i]][dx[i]]})
+      table.insert(materialsNeighbours, {
+        direction = directions[i],
+        value = self.elements[dy[i]][dx[i]],
+        parentGrid = self.elements,
+        dx = dx[i],
+        dy = dy[i]
+      })
     end
   end
   return materialsNeighbours
@@ -64,32 +75,38 @@ end
 --tiles= incoming neighbours from map
 function MaterialsTable:getNeighbours(tiles, element)
   local materialsNeighbours = {}
-  local neighbours=self:getDirectNeighbours(element)
-  local directions={"left","up","right","down"}
+  local neighbours = self:getDirectNeighbours(element)
+  local directions = { "left", "up", "right", "down" }
 
   --tiles=neighbours of self tile
   local indiceX, indiceY = self:getElementIndice(element)
   local dx, dy = { 4, indiceX, 1, indiceX },
       { indiceY, 4, indiceY, 1 }
-      for i = 1, #neighbours, 1 do
-        for j = #directions,1, -1 do
-          if neighbours[i].direction==directions[j] then
-            table.remove(directions,j)
-            table.remove(dx,j)
-            table.remove(dy,j)
-            break
-          end
-        end
+  for i = 1, #neighbours, 1 do
+    for j = #directions, 1, -1 do
+      if neighbours[i].direction == directions[j] then
+        table.remove(directions, j)
+        table.remove(dx, j)
+        table.remove(dy, j)
+        break
       end
-      --then we can attributes our neighbours elements
-      for _, neighbour in ipairs(tiles) do
-        for i = 1, #directions, 1 do
-          if neighbour.direction==directions[i] then
-            local y,x=dy[i],dx[i]
-            table.insert(materialsNeighbours,{direction=directions[i],value=neighbour.value.materials.elements[y][x]})
-          end
-        end
+    end
+  end
+  --then we can attributes our neighbours elements
+  for _, neighbour in ipairs(tiles) do
+    for i = 1, #directions, 1 do
+      if neighbour.direction == directions[i] then
+        local y, x = dy[i], dx[i]
+        table.insert(materialsNeighbours, {
+          direction = directions[i],
+          value = neighbour.value.materials.elements[y][x],
+          parentGrid = neighbour.value.materials.elements,
+          dx = dx[i],
+          dy = dy[i]
+        })
       end
+    end
+  end
   return materialsNeighbours
 end
 
@@ -101,10 +118,11 @@ function MaterialsTable:draw()
   end
 end
 
-function MaterialsTable:update(dt,tiles)
+function MaterialsTable:update(dt, tiles)
   self.coolDown = self.coolDown - dt
   if self.coolDown <= 0 then
-    CombustionManager.update(dt,self,tiles)
+    DensityManager.update(self, tiles)
+    CombustionManager.update(dt, self, tiles)
     for _, line in ipairs(self.elements) do
       for _, element in ipairs(line) do
         element:update(dt)
