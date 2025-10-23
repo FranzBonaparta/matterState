@@ -2,12 +2,12 @@ local Object = require("libs.classic")
 local Material = Object:extend()
 local MaterialsData = require("material.materialsData")
 
-function Material:new(x, y, size, name)
+function Material:new(x, y, size)
   self.x = x
   self.y = y
   self.size = size
   self.color = { 255, 255, 255 }
-  self.name = name
+  self.name = ""
   self.state = "gas" --or "liquid" , "solid"
   self.temperature = 20
   self.isFlammable = false
@@ -19,7 +19,6 @@ function Material:new(x, y, size, name)
   self.maxTemperature=self.isFlammable and 1000 or 600
   self.time = math.random() * 10
   self.canMove=true
-  self:changeName(name)
 end
 
 function Material:changeName(name)

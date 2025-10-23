@@ -6,6 +6,8 @@ function love.load()
     love.graphics.setBackgroundColor(0.1, 0.1, 0.1) -- dark grey background
     map = Map(0, 0, 20)
     map:initTiles()
+    --local element=map.tiles[20][3].materials.solids
+    --print(#element,#map.tiles,#map.tiles[1],element[1].name)
 end
 
 -- Function called at each frame, it updates the logic of the game
@@ -13,6 +15,7 @@ function love.update(dt)
     -- dt = delta time = time since last frame
     -- Used for fluid movements
     map:update(dt)
+
 end
 
 -- Function called after each update to draw on screen

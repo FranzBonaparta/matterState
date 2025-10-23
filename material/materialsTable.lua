@@ -6,8 +6,6 @@ local DensityManager = require("densityManager")
 function MaterialsTable:new(x, y, size)
   self.x = x
   self.y = y
-  self.lastX = x
-  self.lastY = y
   self.size = size --32
   self.solids = {}
   self.liquids = {}
@@ -23,29 +21,25 @@ function MaterialsTable:initElements(name)
   for y = self.y, self.y + self.size - 8, 8 do
     table.insert(self.elements, {})
     for x = self.x, self.x + self.size - 8, 8 do
-      local element = Element(x, y, 8, name)
+      local element = Element(x, y, 8)
+      self:initElement(element,name)
       table.insert(self.elements[index], element)
     end
     index = index + 1
   end
 end
 
-function MaterialsTable:initElement(name)
-  if (self.lastX + self.step) <= self.size and
-      (self.lastY + self.step) <= self.size then
-    self.lastX = self.lastX + self.step
-    self.lastY = self.lastY + self.step
-    local x, y = self.lastX, self.lastY
-    local element = Element(x, y, 8, name)
-    if element.state == "gas" then
-      table.insert(self.gas, element)
-    elseif element.state == "liquid" then
-      table.insert(self.liquids, element)
-    elseif element.state == "solid" then
-      table.insert(self.solids, element)
+function MaterialsTable:initElement(element,name)
+    element:changeName(name)
+    local states={"gas","solid","liquid"}
+    local arrays={self.gas,self.solids,self.liquids}
+    for i = 1, 3, 1 do
+      if element.state==states[i] then
+        table.insert(arrays[i],element)
+        return
+      end
     end
   end
-end
 
 function MaterialsTable:getFormattedElement(element)
   local dx, dy = self:getElementIndice(element)
@@ -148,7 +142,7 @@ function MaterialsTable:update(dt, tiles)
     CombustionManager.update(dt, self, tiles)
     for j, line in ipairs(self.elements) do
       for i, element in ipairs(line) do
-        if self.elements[j - 1] then
+        if j>=2 then
           local upperNeighbour = self.elements[j - 1][i]
           if upperNeighbour.density == element.density
               and element.canMove == true then
