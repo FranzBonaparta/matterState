@@ -6,7 +6,13 @@ local DensityManager = require("densityManager")
 function MaterialsTable:new(x, y, size)
   self.x = x
   self.y = y
+  self.lastX = x
+  self.lastY = y
   self.size = size --32
+  self.solids = {}
+  self.liquids = {}
+  self.gas = {}
+  --all elements
   self.elements = {}
   self.step = 8
   self.coolDown = 0.2
@@ -21,6 +27,23 @@ function MaterialsTable:initElements(name)
       table.insert(self.elements[index], element)
     end
     index = index + 1
+  end
+end
+
+function MaterialsTable:initElement(name)
+  if (self.lastX + self.step) <= self.size and
+      (self.lastY + self.step) <= self.size then
+    self.lastX = self.lastX + self.step
+    self.lastY = self.lastY + self.step
+    local x, y = self.lastX, self.lastY
+    local element = Element(x, y, 8, name)
+    if element.state == "gas" then
+      table.insert(self.gas, element)
+    elseif element.state == "liquid" then
+      table.insert(self.liquids, element)
+    elseif element.state == "solid" then
+      table.insert(self.solids, element)
+    end
   end
 end
 
@@ -123,12 +146,23 @@ function MaterialsTable:update(dt, tiles)
   if self.coolDown <= 0 then
     DensityManager.update(self, tiles)
     CombustionManager.update(dt, self, tiles)
-    for _, line in ipairs(self.elements) do
-      for _, element in ipairs(line) do
+    for j, line in ipairs(self.elements) do
+      for i, element in ipairs(line) do
+        if self.elements[j - 1] then
+          local upperNeighbour = self.elements[j - 1][i]
+          if upperNeighbour.density == element.density
+              and element.canMove == true then
+            element:swapMove(false)
+          elseif upperNeighbour.density < element.density or upperNeighbour.canMove == true then
+            element:swapMove(true)
+          end
+        else
+          element:swapMove(true)
+        end
         element:update(dt)
       end
     end
-    self.coolDown = 0.5
+    self.coolDown = 0.1
   end
 end
 

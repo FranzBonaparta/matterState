@@ -18,6 +18,7 @@ function Material:new(x, y, size, name)
   self.isBurning = false
   self.maxTemperature=self.isFlammable and 1000 or 600
   self.time = math.random() * 10
+  self.canMove=true
   self:changeName(name)
 end
 
@@ -43,7 +44,9 @@ function Material:canBurn()
     return true
   end
 end
-
+function Material:swapMove(bool)
+  self.canMove=bool
+end
 function Material:draw()
   local r, g, b = self.color[1] / 255, self.color[2] / 255, self.color[3] / 255
   love.graphics.setColor(r, g, b)
