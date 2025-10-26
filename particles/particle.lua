@@ -41,9 +41,6 @@ end
 
 function Particle:getNeighbours(map)
   local x, y = self.x, self.y
-  --leftUp/Up/rightUp/Left/Right/leftDown/down/rightDown
-  --[[  local nx = { x - 1, x, x + 1, x - 1, x + 1, x - 1, x, x + 1 }
-  local ny = { y - 1, y - 1, y - 1, y, y, y + 1, y + 1, y + 1 }]]
   --up/LeftUp/RightUp/left/right/down/leftDown/rightDown
   local nx = { x, x - 1, x + 1, x - 1, x + 1, x, x - 1, x + 1 }
   local ny = { y - 1, y - 1, y - 1, y, y, y + 1, y + 1, y + 1 }
@@ -115,7 +112,7 @@ function Particle:update(dt, map)
   self.toolTip:update(dt)
   if self.timer <= 0 then
     if not self.isBurning and TemperatureManager.canBurn(self, map) then
-      self.isBurning = true
+      self:ignite()
     end
     TemperatureManager.propagateTemperature(self, map)
     if not self.stable then

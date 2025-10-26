@@ -20,7 +20,7 @@ function Map:init(size)
         else
           name = "soil"
         end
-      elseif y < size - 4 and y > 40 and x % 20 == 10 then
+      elseif y < size - 4 and y > 40 and (x % 20 ==10 or x % 20 ==11 or x % 20 ==12) then
         name = "wood"
       elseif (y <= size - 4 and y >= size - 12) and x % 20 ~= 10 then
         name = "carbon"

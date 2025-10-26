@@ -6,7 +6,7 @@ function TemperatureManager.canBurn(particle, map)
   if #neighbours == 0 then return end
   for _, neighbour in ipairs(neighbours) do
     if neighbour.isOxidant then
-        return particle.temperature >= particle.ignitionPoint and particle.isFlammable
+        return particle.temperature >= (particle.ignitionPoint-50) and particle.isFlammable
     end
   end
   return false
@@ -18,15 +18,16 @@ function TemperatureManager.propagateTemperature(particle, map)
     particle.temperature = math.min(particle.temperature + 20, particle.maxTemperature)
   end
   if #neighbours == 0 then return end
+  local sumTemp=0
   for _, neighbour in ipairs(neighbours) do
     local diff = neighbour.temperature - particle.temperature
-
+    sumTemp=sumTemp+diff
     if neighbour.isBurning and particle.isFlammable and particle.temperature >= particle.ignitionPoint - 50 then
       particle:ignite()
       break
     elseif particle.isBurning then
       neighbour.temperature=neighbour.temperature+diff*0.5*neighbour.conduction
-    elseif diff > 0 then
+    elseif diff >0 then
       particle.temperature = particle.temperature + (diff*0.5 * particle.conduction)
     end
   end
