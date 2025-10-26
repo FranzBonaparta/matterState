@@ -10,9 +10,12 @@ function Tooltip:new(text, target, delay, position)
     self.hoverTime = 0
     self.isVisible = false
 end
-
+function Tooltip:setText(text)
+    self.text=text
+end
 function Tooltip:draw()
     if self.isVisible then
+        love.graphics.setColor(1,1,1)
         local mx, my = love.mouse.getPosition()
         local tooltipX, tooltipY = mx + 10, my + 10
 

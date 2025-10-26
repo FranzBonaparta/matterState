@@ -1,6 +1,6 @@
-local MaterialsData = {}
+local ParticlesData = {}
 
-MaterialsData.materials = {
+ParticlesData.materials = {
   {
     name = "soil",
     temperature = 25,
@@ -69,12 +69,12 @@ MaterialsData.materials = {
   }
 }
 
-function MaterialsData.getMaterialByName(name)
-  for _, element in ipairs(MaterialsData.materials) do
+function ParticlesData.getParticleByName(name)
+  for _, element in ipairs(ParticlesData.materials) do
     if element.name == name then
       return element
     end
   end
 end
 
-return MaterialsData
+return ParticlesData
