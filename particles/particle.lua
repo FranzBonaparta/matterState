@@ -20,6 +20,7 @@ function Particle:new(x, y)
   self.color = { 255, 255, 255 }
   self.name = ""
   self.chemicalProperties = nil
+  self.startTemperature=20
   self.temperature = 20
   self.isBurning = false
   self.time = math.random() * 10
@@ -27,7 +28,9 @@ function Particle:new(x, y)
   self.toolTip = Tooltip("", self, 0.2)
   self.isHovered = false
   self.timer = 1
+  self.integrity=100
   self.lastSwapIndex = self.index
+  self.psystem=nil
   particleIndex = particleIndex + 1
 end
 
@@ -35,8 +38,10 @@ function Particle:changeName(name)
   local newParticle = ParticlesData.getParticleByName(name)
   if newParticle then
     self.name = newParticle.name
+    self.startTemperature=newParticle.temperature
     self.temperature = newParticle.temperature
     self.color = newParticle.colors
+    self.integrity=100
     if not self.chemicalProperties then
       self.chemicalProperties = ChemicalProperties(name)
     else
@@ -80,6 +85,7 @@ function Particle:initTooltip(map)
   table.insert(lines, string.format("[%i %i]", a, b))
   table.insert(lines, string.format("Avg Temp: %.1f°C", self.temperature))
   table.insert(lines, string.format("NeighboursAmount: %i", neighboursCount))
+  table.insert(lines,string.format("integrity: %i",self.integrity))
   table.insert(lines, self.name)
   local text = table.concat(lines, "\n")
   self.toolTip:setText(text)
@@ -100,6 +106,9 @@ function Particle:draw()
   local r, g, b = self.color[1] / 255, self.color[2] / 255, self.color[3] / 255
   love.graphics.setColor(r, g, b)
   love.graphics.rectangle("fill", self.px, self.py, self.size, self.size)
+  if self.psystem then
+    love.graphics.draw(self.psystem,self.px,self.py)
+  end
   love.graphics.setColor(1, 1, 1)
 end
 
@@ -110,9 +119,10 @@ function Particle:mousepressed(mx, my, button)
 end
 
 function Particle:ignite()
-  if self.chemicalProperties and self.chemicalProperties.isFlammable then
+  if self.chemicalProperties and self.chemicalProperties.isFlammable and not self.isBurning then
     self.temperature = self.chemicalProperties.ignitionPoint
     self.isBurning = true
+    TemperatureManager.makeSmoke(self)
   end
 end
 
@@ -123,6 +133,16 @@ function Particle:update(dt, map)
   self.timer = self.timer - dt
   self.toolTip:update(dt)
   if self.timer <= 0 then
+    if self.integrity<=0 then
+      local temperature=self.temperature
+      local name=self.name=="wood" and "charcoal" or "ashes"
+      if name=="ashes" then
+        self.psystem=nil
+      end
+      self:changeName(name)
+      self.temperature=temperature
+      self.isBurning=false
+    end
     if not self.isBurning and TemperatureManager.canBurn(self, map) then
       self:ignite()
     end
@@ -131,9 +151,14 @@ function Particle:update(dt, map)
       DensityManager.didMove(self, map)
     end
     if self.isBurning then
+      self.integrity=self.integrity-self.chemicalProperties.consumptionRate
       TemperatureManager.drawFlames(self)
     end
     self.timer = 0.5
+  end
+  if self.psystem then
+    self.psystem:update(dt)
+    self.psystem:setEmitterLifetime(self.integrity)
   end
 end
 

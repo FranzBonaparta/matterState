@@ -21,12 +21,14 @@ function love.draw()
     local startTime = love.timer.getTime()
     love.graphics.setColor(1, 1, 1) -- blanc
     map:draw()
-    love.graphics.setColor(1, 1, 1)
+    love.graphics.setColor(0,0,0)
+    love.graphics.rectangle("fill",700,0,200,200)
+    love.graphics.setColor(1, 1, 1,1)
     local endTime = love.timer.getTime()
     local text = string.format("%.4f ms", (endTime - startTime) * 1000)
     love.graphics.printf(text, 700, 0, 200)
     Info.getDetail()
-    love.graphics.setColor(0, 0, 0)
+    love.graphics.setColor(1,1,1)
 end
 
 function love.mousepressed(mx, my, button)

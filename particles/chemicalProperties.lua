@@ -6,6 +6,7 @@ function ChemicalProperties:new(name)
   self.state = "gas"   --or "liquid" , "solid"
   self.density = 5
   self.conduction = 0
+  self.consumptionRate=1
   self.isFlammable = false
   self.isOxidant = false --comburant
   self.ignitionPoint = 300
@@ -23,6 +24,7 @@ function ChemicalProperties:init(name)
     self.ignitionPoint = newParticle.ignitionPoint
     self.density = newParticle.density
     self.conduction = newParticle.conduction
+    self.consumptionRate= newParticle.consumptionRate
   else
     print(string.format("'%s' doesn't exist on particles's table!", name))
   end
