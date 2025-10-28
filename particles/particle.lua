@@ -20,7 +20,7 @@ function Particle:new(x, y)
   self.color = { 255, 255, 255 }
   self.name = ""
   self.chemicalProperties = nil
-  self.startTemperature=20
+  self.startTemperature = 20
   self.temperature = 20
   self.isBurning = false
   self.time = math.random() * 10
@@ -28,9 +28,9 @@ function Particle:new(x, y)
   self.toolTip = Tooltip("", self, 0.2)
   self.isHovered = false
   self.timer = 1
-  self.integrity=100
+  self.integrity = 100
   self.lastSwapIndex = self.index
-  self.psystem=nil
+  self.psystem = nil
   particleIndex = particleIndex + 1
 end
 
@@ -38,10 +38,10 @@ function Particle:changeName(name)
   local newParticle = ParticlesData.getParticleByName(name)
   if newParticle then
     self.name = newParticle.name
-    self.startTemperature=newParticle.temperature
+    self.startTemperature = newParticle.temperature
     self.temperature = newParticle.temperature
     self.color = newParticle.colors
-    self.integrity=100
+    self.integrity = 100
     if not self.chemicalProperties then
       self.chemicalProperties = ChemicalProperties(name)
     else
@@ -51,7 +51,10 @@ function Particle:changeName(name)
     print(string.format("'%s' doesn't exist on particles's table!", name))
   end
 end
-
+function Particle:changeTemperature(temp)
+  local max=math.min(temp,self.chemicalProperties.maxTemperature)
+  self.temperature=max
+end
 function Particle:getCoords()
   return self.px, self.py
 end
@@ -85,7 +88,7 @@ function Particle:initTooltip(map)
   table.insert(lines, string.format("[%i %i]", a, b))
   table.insert(lines, string.format("Avg Temp: %.1f°C", self.temperature))
   table.insert(lines, string.format("NeighboursAmount: %i", neighboursCount))
-  table.insert(lines,string.format("integrity: %i",self.integrity))
+  table.insert(lines, string.format("integrity: %i", self.integrity))
   table.insert(lines, self.name)
   local text = table.concat(lines, "\n")
   self.toolTip:setText(text)
@@ -107,7 +110,7 @@ function Particle:draw()
   love.graphics.setColor(r, g, b)
   love.graphics.rectangle("fill", self.px, self.py, self.size, self.size)
   if self.psystem then
-    love.graphics.draw(self.psystem,self.px,self.py)
+    love.graphics.draw(self.psystem, self.px, self.py)
   end
   love.graphics.setColor(1, 1, 1)
 end
@@ -133,25 +136,43 @@ function Particle:update(dt, map)
   self.timer = self.timer - dt
   self.toolTip:update(dt)
   if self.timer <= 0 then
-    if self.integrity<=0 then
-      local temperature=self.temperature
-      local name=self.name=="wood" and "charcoal" or "ashes"
-      if name=="ashes" then
-        self.psystem=nil
+    local neighbours = self:getNeighbours(map)
+    if self.isBurning then
+      for _, neighbour in ipairs(neighbours) do
+        if not neighbour.isBurning then
+          neighbour.integrity = math.max(0, neighbour.integrity - 1)
+        end
+        
       end
-      self:changeName(name)
-      self.temperature=temperature
-      self.isBurning=false
     end
+    for _, neighbour in ipairs(neighbours) do
+      if neighbour.integrity <= 0 and neighbour.name == "oxygen" then
+        neighbour:changeName("carbonDioxide")
+        neighbour.stable = false
+        neighbour.isBurning = false
+      end
+    end
+    if self.integrity <= 0 then
+      if (self.name == "wood" or self.name == "charcoal") then
+        local temperature = self.temperature
+        local name = self.name == "wood" and "charcoal" or "ashes"
+        self:changeName(name)
+        self.temperature = temperature
+        self.isBurning = false
+      end
+    end
+
     if not self.isBurning and TemperatureManager.canBurn(self, map) then
       self:ignite()
+    elseif not self.isBurning and self.psystem then
+      self.psystem = nil
     end
-    TemperatureManager.propagateTemperature(self, map)
+    TemperatureManager.propagateTemperature(self, map,dt)
     if not self.stable then
       DensityManager.didMove(self, map)
     end
     if self.isBurning then
-      self.integrity=self.integrity-self.chemicalProperties.consumptionRate
+      self.integrity = self.integrity - self.chemicalProperties.consumptionRate
       TemperatureManager.drawFlames(self)
     end
     self.timer = 0.5

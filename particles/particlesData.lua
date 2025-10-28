@@ -35,7 +35,7 @@ ParticlesData.materials = {
     flammable = false,
     oxidant = false,
     ignitionPoint = 300,
-    colors = { 224, 224, 224 }
+    colors = { 80,120,130}
   },
   {
     name = "wood",
