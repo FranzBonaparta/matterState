@@ -23,30 +23,13 @@ function Map:init(size)
       elseif y < size - 4 and y > 40 and (x % 20 ==10 or x % 20 ==11 or x % 20 ==12) then
         name = "wood"
       elseif (y <= size - 4 and y >= size - 12) and x % 20 ~= 10 then
-        name = "carbon"
+        name = "carbonDioxide"
       else
         name = "oxygen"
       end
-      self:changeName(particle, name)
+      particle:changeName(name)
       table.insert(self.particles[y], particle)
     end
-  end
-end
-
-function Map:changeName(particle, name)
-  local newParticle = ParticlesData.getParticleByName(name)
-  if newParticle then
-    particle.name = newParticle.name
-    particle.state = newParticle.state
-    particle.temperature = newParticle.temperature
-    particle.isFlammable = newParticle.flammable
-    particle.isOxidant = newParticle.oxidant
-    particle.ignitionPoint = newParticle.ignitionPoint
-    particle.density = newParticle.density
-    particle.conduction = newParticle.conduction
-    particle.color = newParticle.colors
-  else
-    print(string.format("'%s' doesn't exist on particles's table!", name))
   end
 end
 

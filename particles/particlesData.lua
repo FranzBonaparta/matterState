@@ -24,7 +24,7 @@ ParticlesData.materials = {
     colors = { 204, 255, 255 }
   },
   {
-    name = "carbon",
+    name = "carbonDioxide",
     temperature = 15,
     density = 1.87,
     conduction = 0.03,

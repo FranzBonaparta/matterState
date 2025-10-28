@@ -3,6 +3,8 @@ local Particle = Object:extend()
 local Tooltip = require("libs.tooltip")
 local TemperatureManager = require("managers.temperatureManager")
 local DensityManager = require("managers.densityManager")
+local ParticlesData = require("particles.particlesData")
+local ChemicalProperties = require("particles.chemicalProperties")
 local particleIndex = 1
 function Particle:new(x, y)
   self.index = particleIndex
@@ -17,15 +19,9 @@ function Particle:new(x, y)
   self.vy = 0
   self.color = { 255, 255, 255 }
   self.name = ""
-  self.state = "gas" --or "liquid" , "solid"
+  self.chemicalProperties = nil
   self.temperature = 20
-  self.isFlammable = false
-  self.isOxidant = false --comburant
-  self.ignitionPoint = 300
-  self.density = 5
-  self.conduction = 0
   self.isBurning = false
-  self.maxTemperature = self.isFlammable and 1000 or 600
   self.time = math.random() * 10
   self.stable = false
   self.toolTip = Tooltip("", self, 0.2)
@@ -33,6 +29,22 @@ function Particle:new(x, y)
   self.timer = 1
   self.lastSwapIndex = self.index
   particleIndex = particleIndex + 1
+end
+
+function Particle:changeName(name)
+  local newParticle = ParticlesData.getParticleByName(name)
+  if newParticle then
+    self.name = newParticle.name
+    self.temperature = newParticle.temperature
+    self.color = newParticle.colors
+    if not self.chemicalProperties then
+      self.chemicalProperties = ChemicalProperties(name)
+    else
+      self.chemicalProperties:init(name)
+    end
+  else
+    print(string.format("'%s' doesn't exist on particles's table!", name))
+  end
 end
 
 function Particle:getCoords()
@@ -98,15 +110,15 @@ function Particle:mousepressed(mx, my, button)
 end
 
 function Particle:ignite()
-  if self.isFlammable then
-    self.temperature = self.ignitionPoint
+  if self.chemicalProperties and self.chemicalProperties.isFlammable then
+    self.temperature = self.chemicalProperties.ignitionPoint
     self.isBurning = true
   end
 end
 
 function Particle:update(dt, map)
-  if not self.stable then
-    self.stable = self.state == "solid"
+  if not self.stable and self.chemicalProperties then
+    self.stable = self.chemicalProperties.state == "solid"
   end
   self.timer = self.timer - dt
   self.toolTip:update(dt)

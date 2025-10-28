@@ -4,9 +4,9 @@ function DensityManager.didMove(particle, map)
   local neighbours = particle:getNeighbours(map)
     for i = #neighbours, 1, -1 do
       local neighbour=neighbours[i]
-      local incompatible=neighbour.state=="solid" or particle.state~= neighbour.state
+      local incompatible=neighbour.state=="solid" or particle.chemicalProperties.state~= neighbour.chemicalProperties.state
       local recentSwap=particle.lastSwapIndex == neighbour.index
-      local tooDense=particle.density>=neighbour.density
+      local tooDense=particle.chemicalProperties.density>=neighbour.chemicalProperties.density
       local tooLow=particle.y<neighbour.y
       if incompatible or recentSwap or tooDense or tooLow then
         table.remove(neighbours,i)
