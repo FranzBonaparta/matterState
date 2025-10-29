@@ -1,3 +1,20 @@
+--[[
+    ParticlesData.lua
+    Copyright (C) 2025 Jojopov
+
+    This file is part of the MatterStates project.
+    Licensed under the GNU GPL v3 (see LICENSE for details).
+
+    ╔════════════════════════════════════════════════════════════════╗
+    ║  Module : ParticlesData                                         ║
+    ║  Description : Contains definitions and physical properties    ║
+    ║                 of particles (density, temperature thresholds, ║
+    ║                 flammability, etc.). Used by TemperatureManager║
+    ║                 and related systems.                           ║
+    ║  Author : Jojopov                                              ║
+    ╚════════════════════════════════════════════════════════════════╝
+]]
+
 local ParticlesData = {}
 
 ParticlesData.materials = {

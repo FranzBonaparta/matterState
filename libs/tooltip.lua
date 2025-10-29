@@ -25,7 +25,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 ║  Author : Jojopov                                              ║
 ║  Creation : April 2025                                         ║
 ║  Use :                                                         ║
-║     local Tooltip = require("ui.Tooltip")                      ║
+║     local Tooltip = require("ui.tooltip")                      ║
 ║     local tip = Tooltip("My text", button)                     ║
 ║    or local tip= Tooltip("My text", button, delay, "left")     ║
 ║     tip:update(dt); tip:draw()                                 ║

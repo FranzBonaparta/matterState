@@ -7,7 +7,7 @@ A sandbox simulation exploring simplified thermodynamics, matter transitions and
 
 ## 🚀 Features
 
-- 🌡️ Each tile contains one or more materials with temperature and combustion properties.
+- 🌡️ Each tile represent one material (particule) with temperature and combustion properties.
 - 🔥 Flammable materials can ignite and evolve over time (wood → charcoal → ash).
 - 🧪 Gases like oxygen and carbon dioxide can be modeled (WIP).
 - 📊 Tooltips show tile data: material composition, temperature, and burning status.

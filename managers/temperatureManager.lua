@@ -1,8 +1,40 @@
-local TemperatureManager = {}
+--[[
+    TemperatureManager.lua
+    Copyright (C) 2025 Jojopov
 
+    This file is part of the MatterStates project.
+
+This program is free software: you can redistribute it and/or modify it
+under the terms of the GNU General Public License published by the Free Software Foundation,
+either version 3 of the license, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+
+but WITHOUT ANY WARRANTY; without even the implied warranty
+of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+
+See the GNU General Public License for details.
+
+You should have received a copy of the GNU General Public License
+with this program. If not, see <https://www.gnu.org/licenses/>.
+
+╔═════════════════════════════════════════════════════════════════════════╗
+║  Component : TemperatureManager                                         ║
+║  Description : Allows you to manage all temperature changes,            ║
+║                their propagation and their impact on particles          ║
+║                (physical and visual).                                   ║
+║  Author : Jojopov                                                       ║
+║  Creation : October 2025                                                ║
+║  Use :                                                                  ║
+║     local TemperatureManager = require("managers.temperatureManager")   ║
+║     local bool=TemperatureManager.canBurn(particle,map)                 ║
+╚═════════════════════════════════════════════════════════════════════════╝
+]]
+local TemperatureManager = {}
+-- Check if the particle is flammable, hot enough to burn, and if it has a neighbor that is an oxidizer.
 function TemperatureManager.canBurn(particle, map)
   local neighbours = particle:getNeighbours(map)
-  if #neighbours == 0 then return end
+  if #neighbours == 0 then return false end
   for _, neighbour in ipairs(neighbours) do
     if neighbour.chemicalProperties and neighbour.chemicalProperties.isOxidant then
       return particle.temperature >= (particle.chemicalProperties.ignitionPoint - 50) and
@@ -16,11 +48,11 @@ function TemperatureManager.propagateTemperature(particle, map, dt)
   local delta = math.floor(dt * 1000)
   local neighbours = particle:getNeighbours(map)
   if not particle.chemicalProperties or #neighbours == 0 then return end
-
+  -- If the particle is burning, but its temperature is still not at its maximum, then it is heating up.
   if particle.isBurning and particle.temperature <= particle.chemicalProperties.maxTemperature then
     particle.temperature = math.min(particle.temperature + delta, particle.chemicalProperties.maxTemperature)
   end
-
+  -- Now we check if the particle has a neighbor on fire.
   local hasBurn = false
   for _, neighbour in ipairs(neighbours) do
     if neighbour.isBurning then
@@ -54,12 +86,17 @@ end
 
 function TemperatureManager.drawFlames(particle)
   if particle.isBurning then
+    -- this will randomly alternate between colors to represent fire!
     local rand = math.random(1, 3)
     local colors = { { 255, 0, 0 }, { 255, 128, 0 }, { 255, 255, 0 } }
     particle.color = colors[rand]
   end
 end
 
+--[[This will generate and assign a ParticleSystem to the particle.
+It's the most convenient way I've found to avoid simulating each transformation
+ of oxygen particles into CO2. It would have been necessary to generate
+ billions of particles to obtain a realistic result!]]
 function TemperatureManager.makeSmoke(particle)
   local size = particle.size / 2
   local canvas = love.graphics.newCanvas(size, size, { format = "rgba8" })
