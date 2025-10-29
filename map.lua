@@ -1,6 +1,5 @@
 local Object = require("libs.classic")
 local Particle = require("particles.particle")
-local ParticlesData = require("particles.particlesData")
 local Map = Object:extend()
 
 function Map:new()
