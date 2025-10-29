@@ -1,3 +1,6 @@
+-- Info.lua
+-- Displays debug information: FPS, delta time, and mouse position.
+-- Used for internal testing and performance tracking.
 local Info = {}
 
 function Info.getDetail()

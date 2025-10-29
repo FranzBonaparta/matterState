@@ -1,3 +1,26 @@
+--[[
+    main.lua
+    Copyright (C) 2025 Jojopov
+
+    This file is part of the MatterStates project.
+    Licensed under the GNU GPL v3 (see LICENSE for details).
+    
+    MatterStates — where particles find their temperature.
+╔════════════════════════════════════════════════════════════════╗
+║  Entry Point : MatterStates                                    ║
+║  Description : Initializes Löve2D, loads all components, and   ║
+║                starts the main simulation loop.                ║
+║                                                                ║
+║  Author : Jojopov                                              ║
+║  Creation : September 2025                                     ║
+║                                                                ║
+║  Notes :                                                       ║
+║   - This file serves as the bootstrap for the engine.          ║
+║   - It loads managers (Temperature, Density, etc.) and         ║
+║     initializes the simulation environment.                    ║
+╚════════════════════════════════════════════════════════════════╝
+]]
+
 local Map = require("map")
 local map = Map()
 local Info=require("info")
