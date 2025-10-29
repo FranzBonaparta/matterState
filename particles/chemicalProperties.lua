@@ -11,6 +11,7 @@ function ChemicalProperties:new(name)
   self.isOxidant = false --comburant
   self.ignitionPoint = 300
   self.maxTemperature = self.isFlammable and 1000 or 600
+  self.consumptionChild=""
 
   self:init(name)
 end
@@ -25,6 +26,7 @@ function ChemicalProperties:init(name)
     self.density = newParticle.density
     self.conduction = newParticle.conduction
     self.consumptionRate= newParticle.consumptionRate
+    self.consumptionChild=newParticle.consumptionChild
   else
     print(string.format("'%s' doesn't exist on particles's table!", name))
   end

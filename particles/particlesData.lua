@@ -11,6 +11,7 @@ ParticlesData.materials = {
     flammable = false,
     oxidant = false,
     ignitionPoint = 300,
+    consumptionChild=nil,
     colors = { 102, 51, 0 }
   },
   {
@@ -23,7 +24,8 @@ ParticlesData.materials = {
     flammable = false,
     oxidant = true,
     ignitionPoint = 300,
-    colors = { 204, 255, 255 }
+    consumptionChild="carbonDioxide",
+    colors = { 153,255,255 }
   },
   {
     name = "carbonDioxide",
@@ -35,6 +37,7 @@ ParticlesData.materials = {
     flammable = false,
     oxidant = false,
     ignitionPoint = 300,
+    consumptionChild=nil,
     colors = { 80,120,130}
   },
   {
@@ -47,7 +50,8 @@ ParticlesData.materials = {
     flammable = true,
     oxidant = false,
     ignitionPoint = 300,
-    colors = { 153, 76, 0 }
+    consumptionChild="charcoal",
+    colors = { 204,102, 0 }
   },
   {
     name = "stone",
@@ -59,7 +63,8 @@ ParticlesData.materials = {
     flammable = false,
     oxidant = false,
     ignitionPoint = 300,
-    colors = { 96, 96, 96 }
+    consumptionChild=nil,
+    colors = { 160,160,160 }
   },
   {
     name = "charcoal",
@@ -71,6 +76,7 @@ ParticlesData.materials = {
     flammable = true,
     oxidant = false,
     ignitionPoint = 280,
+    consumptionChild="ashes",
     colors = { 0, 0, 0 }
   },
   {
@@ -83,7 +89,8 @@ ParticlesData.materials = {
     flammable = false,
     oxidant = false,
     ignitionPoint = 600,
-    colors = { 224, 224, 224 }
+    consumptionChild=nil,
+    colors = { 220, 220, 220 }
   }
 }
 

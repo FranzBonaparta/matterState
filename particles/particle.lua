@@ -48,13 +48,15 @@ function Particle:changeName(name)
       self.chemicalProperties:init(name)
     end
   else
-    print(string.format("'%s' doesn't exist on particles's table!", name))
+    print(string.format("'%s' doesn't exist on particles's table! ref %s", name, self.name))
   end
 end
+
 function Particle:changeTemperature(temp)
-  local max=math.min(temp,self.chemicalProperties.maxTemperature)
-  self.temperature=max
+  local max = math.min(temp, self.chemicalProperties.maxTemperature)
+  self.temperature = max
 end
+
 function Particle:getCoords()
   return self.px, self.py
 end
@@ -142,21 +144,23 @@ function Particle:update(dt, map)
         if not neighbour.isBurning then
           neighbour.integrity = math.max(0, neighbour.integrity - 1)
         end
-        
       end
     end
     for _, neighbour in ipairs(neighbours) do
       if neighbour.integrity <= 0 and neighbour.name == "oxygen" then
-        neighbour:changeName("carbonDioxide")
-        neighbour.stable = false
-        neighbour.isBurning = false
+        local child = neighbour.chemicalProperties.consumptionChild
+        if child then
+          neighbour:changeName(child)
+          neighbour.stable = false
+          neighbour.isBurning = false
+        end
       end
     end
     if self.integrity <= 0 then
-      if (self.name == "wood" or self.name == "charcoal") then
+      local child = self.chemicalProperties.consumptionChild
+      if child then
         local temperature = self.temperature
-        local name = self.name == "wood" and "charcoal" or "ashes"
-        self:changeName(name)
+        self:changeName(child)
         self.temperature = temperature
         self.isBurning = false
       end
@@ -167,7 +171,7 @@ function Particle:update(dt, map)
     elseif not self.isBurning and self.psystem then
       self.psystem = nil
     end
-    TemperatureManager.propagateTemperature(self, map,dt)
+    TemperatureManager.propagateTemperature(self, map, dt)
     if not self.stable then
       DensityManager.didMove(self, map)
     end
