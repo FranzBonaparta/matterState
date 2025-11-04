@@ -32,6 +32,7 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 local Object = require("libs.classic")
 local Particle = require("particles.particle")
 local Map = Object:extend()
+local ParticlesData = require("particles.particlesData")
 
 function Map:new()
   self.particles = {}
