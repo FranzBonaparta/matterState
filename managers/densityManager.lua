@@ -33,41 +33,113 @@ local DensityManager = {}
 -- We are trying to determine if the targeted particle needs to move.
 function DensityManager.didMove(particle, map)
   --  In the case of movement, we collect neighboring particles.
-  local neighbours = particle:getNeighbours(map)
-    for i = #neighbours, 1, -1 do
-      local neighbour=neighbours[i]
-      -- If the neighboring substance is solid or not of the same type (liquid, gas): it is incompatible
-      local incompatible=neighbour.state=="solid" or particle.chemicalProperties.state~= neighbour.chemicalProperties.state
-      -- We want to avoid a back-and-forth.
-      local recentSwap=particle.lastSwapIndex == neighbour.index
-      -- Only particles that are less dense than their neighbors move.
-      local tooDense=particle.chemicalProperties.density>=neighbour.chemicalProperties.density
-      -- A particle only moves if it is above or next its neighbor.
-      local tooLow=particle.y<neighbour.y
-      -- We only keep the neighboring particles eligible for position exchange.
-      if incompatible or recentSwap or tooDense or tooLow then
-        table.remove(neighbours,i)
+  local neighbours = particle:getNeighbours(map.particles)
+  for i = #neighbours, 1, -1 do
+    local neighbour = neighbours[i]
+    -- If the neighboring substance is solid or not of the same type (liquid, gas): it is incompatible
+    local incompatible = neighbour.state == "solid" or
+        particle.chemicalProperties.state ~= neighbour.chemicalProperties.state
+    -- We want to avoid a back-and-forth.
+    local recentSwap = particle.lastSwapIndex == neighbour.index
+    -- Only particles that are less dense than their neighbors move.
+    local tooDense = particle.chemicalProperties.density >= neighbour.chemicalProperties.density
+    -- A particle only moves if it is above or next its neighbor.
+    local tooLow = particle.y < neighbour.y
+    -- We only keep the neighboring particles eligible for position exchange.
+    if incompatible or recentSwap or tooDense or tooLow then
+      table.remove(neighbours, i)
+    end
+  end
+  -- If there are no more neighbors left, then the particle is stable.
+  particle.stable = (#neighbours == 0)
+  -- If, despite this, the particle is unstable, then we proceed with the exchange of positions.
+  if not particle.stable then
+    --particle:swap(neighbours[1],map)
+    map:swapParticles(particle, neighbours[1])
+  end
+end
+
+function DensityManager.didFall(particle, map)
+  local downNeighbour = particle:getDownNeighbour(map.particles)
+  --local neighbours = particle:getNeighbours(map)
+
+  if downNeighbour then
+    if downNeighbour.chemicalProperties.state == "solid" and downNeighbour.stable then
+      particle.stable = true
+    elseif downNeighbour.chemicalProperties.state ~= "solid" and downNeighbour.chemicalProperties.state ~= "granular" then
+      -- on tombe
+      map:swapParticles(particle, downNeighbour)
+    elseif downNeighbour.chemicalProperties.state == "solid" then
+      particle.stable = downNeighbour.stable
+      elseif downNeighbour.chemicalProperties.state == "granular" and downNeighbour.stable then
+    particle.stable =true
+      end
+  else
+    particle.stable=true
+  end
+end
+
+function DensityManager.allAreStable(neighbours)
+  for _, n in ipairs(neighbours) do
+    local s = n.chemicalProperties.state
+    --If the neighbour is liquid or gas, we fall
+    if not n.stable or s == "liquid" or s == "gas" then
+      return false
+    end
+  end
+  return true
+end
+
+function DensityManager.getUnstableNeighbours(neighbours)
+  local elligibles = {}
+  for _, neighbour in ipairs(neighbours) do
+    local state = neighbour.chemicalProperties.state
+    --If the neighbour is liquid or gas, the particule is elligible to swap
+    if (state == "granular" and not neighbour.stable) or state == "gas" or state=="liquid" then
+      table.insert(elligibles, neighbour)
+    end
+  end
+  return elligibles
+end
+
+function DensityManager.didSlide(particle, map)
+  local down = particle:getDownNeighbour(map.particles)
+
+  if down then
+    --else check if the down neighbour is a stable solid particle
+    local s = down.chemicalProperties.state
+    if s == "gas" or s == "liquid" then
+      map:swapParticles(particle, down)
+      particle.stable = false
+      --particle:setColor(0, 255, 0)
+
+      return
+    end
+    --else:make more checks
+    local downNeighbours = particle:getLateralDownNeighbours(map.particles)
+    table.insert(downNeighbours, down)
+    
+      local stable = DensityManager.allAreStable(downNeighbours)
+      if not stable and down.chemicalProperties.state~="solid" then
+      local elligibles = DensityManager.getUnstableNeighbours(downNeighbours)
+    if #elligibles > 0 then  
+        particle.stable = false
+        local target = elligibles[math.random(1, #elligibles)]
+        -- on tombe
+          if target.chemicalProperties.state=="granular" then
+            particle.stable=true
+            --[[particle:setColor(255, 0, 0) 
+          else
+            particle:setColor(0, 0, 255)]]
+          end
+          map:swapParticles(particle, target)
+        return
       end
     end
-    -- If there are no more neighbors left, then the particle is stable.
-    particle.stable=(#neighbours==0)
-    -- If, despite this, the particle is unstable, then we proceed with the exchange of positions.
-    if not particle.stable then
-      local x, y = particle.x, particle.y
-      local neighbour = neighbours[1]
-      local nx, ny = neighbour.x, neighbour.y
-      local px, py = particle.px, particle.py
-      local npx, npy = neighbour.px, neighbour.py
-      particle.lastSwapIndex = neighbour.index
-      neighbour.lastSwapIndex = particle.index
-      particle.px, particle.py = npx, npy
-      particle.x, particle.y = nx, ny
-      neighbour.px, neighbour.py = px, py
-      neighbour.x, neighbour.y = x, y
-      -- And we push the modified particules into the map
-      map[y][x] = neighbour
-      map[ny][nx] = particle
-    end
+  end
+    --check if we are on map's border
+    particle.stable = true
+    --particle:setColor(255, 0, 0)
 end
 
 return DensityManager

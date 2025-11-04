@@ -52,7 +52,7 @@ function Particle:new(x, y)
   self.vx = 0
   -- speed into py axe
   self.vy = 0
-  self.color = { 255, 255, 255 }
+  self.color = { 0,0,0 }
   self.name = ""
   self.chemicalProperties = nil
   self.startTemperature = 20
@@ -79,13 +79,14 @@ function Particle:changeName(name)
     self.name = newParticle.name
     self.startTemperature = newParticle.temperature
     self.temperature = newParticle.temperature
-    self.color = newParticle.colors
+    self:setColor(newParticle.colors[1], newParticle.colors[2], newParticle.colors[3])
     self.integrity = 100
     if not self.chemicalProperties then
       self.chemicalProperties = ChemicalProperties(name)
     else
       self.chemicalProperties:init(name)
     end
+    self.stable=false
   else
     print(string.format("'%s' doesn't exist on particles's table! ref %s", name, self.name))
   end
@@ -100,6 +101,11 @@ end
 -- Defines how to retrieve pixel coordinates
 function Particle:getCoords()
   return self.px, self.py
+end
+
+function Particle:setColor(r, g, b)
+  r, g, b = love.math.colorFromBytes(r, g, b)
+  self.color = { r, g, b }
 end
 
 -- Thanks to the particle array given as a parameter
@@ -120,6 +126,27 @@ function Particle:getNeighbours(map)
   return neighbours
 end
 
+function Particle:getDownNeighbour(map)
+  local x, y = self.x, self.y
+  local nx, ny = x, y + 1
+  if map[ny] and map[ny][nx] then
+    return map[ny][nx]
+  end
+  return nil
+end
+
+function Particle:getLateralDownNeighbours(map)
+  local x, y = self.x, self.y
+  local downNeighbours={}
+  local nx, ny= {x-1,x+1}, y + 1
+  for i, newX in ipairs(nx) do
+    if map[ny] and map[ny][newX] then
+      table.insert(downNeighbours,map[ny][newX])
+    end
+  end
+  return downNeighbours
+end
+
 -- Just a function created for convenience to retrieve the number of neighboring particles.
 function Particle:getNeighboursCount(map)
   local neighbours = self:getNeighbours(map)
@@ -138,7 +165,9 @@ function Particle:initTooltip(map)
   table.insert(lines, string.format("Avg Temp: %.1f°C", self.temperature))
   table.insert(lines, string.format("NeighboursAmount: %i", neighboursCount))
   table.insert(lines, string.format("integrity: %i", self.integrity))
-  table.insert(lines, self.name)
+  local stable = self.stable and "stable" or "unstable"
+  table.insert(lines, string.format("%s %s", self.name, stable))
+  table.insert(lines,string.format("%s",self.chemicalProperties.state))
   local text = table.concat(lines, "\n")
   self.toolTip:setText(text)
 end
@@ -156,8 +185,7 @@ end
 function Particle:draw()
   love.graphics.setColor(1, 0, 0)
   love.graphics.rectangle("line", self.px, self.py, self.size, self.size)
-  local r, g, b = self.color[1] / 255, self.color[2] / 255, self.color[3] / 255
-  love.graphics.setColor(r, g, b)
+  love.graphics.setColor(self.color[1], self.color[2], self.color[3])
   love.graphics.rectangle("fill", self.px, self.py, self.size, self.size)
   -- this draws smoke if the particle is burning
   if self.psystem then
@@ -188,16 +216,17 @@ whether they are already burning.
 We will also need to propagate temperature, fire, smoke, etc.]]
 function Particle:update(dt, map)
   -- First, we check if the particle is solid; in which case it must be stable.
-  if not self.stable and self.chemicalProperties then
+  --[[  if not self.stable and self.chemicalProperties then
     self.stable = self.chemicalProperties.state == "solid"
-  end
+  end]]
   -- The timer decreases with each frame.
+  local mapArray=map.particles
   self.timer = self.timer - dt
   self.toolTip:update(dt)
   -- If the timer has finished, then we can update.
   if self.timer <= 0 then
     -- First, we collect the neighboring particles
-    local neighbours = self:getNeighbours(map)
+    local neighbours = self:getNeighbours(mapArray)
     if self.isBurning then
       -- If the particle burns, it decomposes its neighbors.
       for _, neighbour in ipairs(neighbours) do
@@ -229,17 +258,31 @@ function Particle:update(dt, map)
       end
     end
     -- If the particle is not yet burning, but meets all the criteria to ignite: we light it!
-    if not self.isBurning and TemperatureManager.canBurn(self, map) then
+    if not self.isBurning and TemperatureManager.canBurn(self, mapArray) then
       self:ignite()
       -- If it is no longer burning, but still has a Löve's ParticleSystem, then the system is removed.
     elseif not self.isBurning and self.psystem then
       self.psystem = nil
     end
     -- We initiate the temperature propagation.
-    TemperatureManager.propagateTemperature(self, map, dt)
+    TemperatureManager.propagateTemperature(self, mapArray, dt)
     -- We check if the particule need to move.
     if not self.stable then
-      DensityManager.didMove(self, map)
+      local states={"solid","granular","liquid","gas"}
+      local actions={DensityManager.didFall,DensityManager.didSlide,DensityManager.didMove,DensityManager.didMove}
+      for i = 1, #states, 1 do
+        if self.chemicalProperties.state ==states[i] then
+          actions[i](self, map)
+          break
+        end
+      end
+    end
+    --if there is no particule solid or granular under, we can fall again!
+    if self.stable and (self.chemicalProperties.state=="solid" or self.chemicalProperties.state=="granular") then
+      local n=self:getDownNeighbour(mapArray)
+      if n and n.chemicalProperties.state~="solid" and n.chemicalProperties.state~="granular"then
+        self.stable=false
+      end
     end
     -- If the particle burns, then it decomposes. And its properties (colors)
     -- are modified to visually make it appear to be on fire.

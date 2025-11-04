@@ -61,6 +61,43 @@ function Map:init(size)
       table.insert(self.particles[y], particle)
     end
   end
+   for _, particle in ipairs(self.particles[#self.particles]) do
+    if particle.chemicalProperties.state == "solid" then
+      particle.stable = true
+    end
+  end
+end
+
+-- This allow to change a particle after selecting a new sort of element in the palette
+function Map:changeParticuleByColor(colors, x, y)
+  local r, g, b = colors[1], colors[2], colors[3]
+  local element = ParticlesData.getParticleByColors(r, g, b)
+  if element and element.name then
+    local newParticle = Particle(x, y)
+    newParticle:changeName(element.name)
+    self.particles[y][x] = newParticle
+  end
+end
+
+function Map:swapParticles(p1, p2)
+  if p1.lastSwapIndex ~= p2.index and p1.index~= p2.lastSwapIndex
+  then
+    local x, y = p1.x, p1.y
+    local nx, ny = p2.x, p2.y
+    local px, py = p1.px, p1.py
+    local npx, npy = p2.px, p2.py
+    p1.lastSwapIndex = p2.index
+    p2.lastSwapIndex = p1.index
+    p1.px, p1.py = npx, npy
+    p1.x, p1.y = nx, ny
+    p2.px, p2.py = px, py
+    p2.x, p2.y = x, y
+    -- And we push the modified particules into the map
+    if self.particles[y] and self.particles[ny] and self.particles[y][x] and self.particles[ny][nx] then
+      self.particles[y][x] = p2
+      self.particles[ny][nx] = p1
+    end
+  end
 end
 
 function Map:draw()
@@ -75,10 +112,16 @@ function Map:draw()
     end
   end
 end
-function Map:mousepressed(mx,my,button)
-  for _, line in ipairs(self.particles) do
-    for _, particle in ipairs(line) do
-      particle:mousepressed(mx,my,button)
+function Map:mousepressed(mx, my, button, colors)
+  if colors then
+    for y, line in ipairs(self.particles) do
+      for x, particle in ipairs(line) do
+        particle:mousepressed(mx, my, button)
+        if particle.mouseIsHover and particle:mouseIsHover(mx, my) and button == 2 then
+          self:changeParticuleByColor(colors, x, y)
+          return
+        end
+      end
     end
   end
 end
@@ -86,7 +129,7 @@ function Map:update(dt)
   local mx, my = love.mouse.getPosition()
   for _, line in ipairs(self.particles) do
     for _, particle in ipairs(line) do
-      particle:update(dt, self.particles)
+      particle:update(dt, self)
       -- It's only here that we check if a particle is hovered over, in order to activate its Tooltip.
       if particle:mouseIsHover(mx, my) then
         particle:initTooltip(self.particles)

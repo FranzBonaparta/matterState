@@ -6,7 +6,7 @@
     Licensed under the GNU GPL v3 (see LICENSE for details).
 
     ╔════════════════════════════════════════════════════════════════╗
-    ║  Module : ParticlesData                                         ║
+    ║  Module : ParticlesData                                        ║
     ║  Description : Contains definitions and physical properties    ║
     ║                 of particles (density, temperature thresholds, ║
     ║                 flammability, etc.). Used by TemperatureManager║
@@ -24,7 +24,7 @@ ParticlesData.materials = {
     density = 1.5,
     conduction = 1.0,
     consumptionRate = 1,
-    state = "solid",
+    state = "granular",
     flammable = false,
     oxidant = false,
     ignitionPoint = 300,
@@ -102,7 +102,7 @@ ParticlesData.materials = {
     density = 1.5,
     conduction = 0.055,
     consumptionRate = 1,
-    state = "solid",
+    state = "granular",
     flammable = false,
     oxidant = false,
     ignitionPoint = 600,
@@ -114,6 +114,22 @@ ParticlesData.materials = {
 function ParticlesData.getParticleByName(name)
   for _, element in ipairs(ParticlesData.materials) do
     if element.name == name then
+      return element
+    end
+  end
+end
+function ParticlesData.getColors(colors)
+  for _, element in ipairs(ParticlesData.materials) do
+    if element.colors then
+      table.insert(colors,element.colors)
+    end
+  end
+end
+
+function ParticlesData.getParticleByColors(r,g,b)
+   for _, element in ipairs(ParticlesData.materials) do
+    local pr,pg,pb=love.math.colorFromBytes(element.colors[1],element.colors[2],element.colors[3])
+    if pr==r and pg==g and pb==b then
       return element
     end
   end
