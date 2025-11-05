@@ -84,6 +84,55 @@ function TemperatureManager.propagateTemperature(particle, map, dt)
   end
 end
 
+function TemperatureManager.manageFire(particle,map)
+      -- If the particle is not yet burning, but meets all the criteria to ignite: we light it!
+    if not particle.isBurning and TemperatureManager.canBurn(particle, map) then
+      particle:ignite()
+    else
+      TemperatureManager.stopFire(particle)
+    end
+end
+
+function TemperatureManager.stopFire(particle)
+  -- If it is no longer burning, but still has a Löve's ParticleSystem, then the system is removed.
+  if not particle.isBurning and particle.psystem then
+      particle.psystem = nil
+  end
+end
+
+--manage decomposition and transformation of particle due to ignition
+function TemperatureManager.decomposeParticle(particle,neighbours)
+  if particle.isBurning then
+      -- If the particle burns, it decomposes its neighbors.
+      for _, neighbour in ipairs(neighbours) do
+        if not neighbour.isBurning then
+          neighbour.integrity = math.max(0, neighbour.integrity - 1)
+        end
+      end
+    end
+        for _, neighbour in ipairs(neighbours) do
+      -- If the neighboring particle is decomposed and it is oxygen, then it is transformed.
+      if neighbour.integrity <= 0 and neighbour.name == "oxygen" then
+        local child = neighbour.chemicalProperties.consumptionChild
+        if child then
+          neighbour:changeName(child)
+          neighbour.stable = false
+          neighbour.isBurning = false
+        end
+      end
+    end
+    -- If the particle is decomposed, we check that it can be transformed before starting the process.
+    if particle.integrity <= 0 then
+      local child = particle.chemicalProperties.consumptionChild
+      if child then
+        local temperature = particle.temperature
+        particle:changeName(child)
+        particle.temperature = temperature
+        particle.isBurning = false
+      end
+    end
+end
+
 function TemperatureManager.drawFlames(particle)
   if particle.isBurning then
     -- this will randomly alternate between colors to represent fire!
@@ -118,6 +167,23 @@ function TemperatureManager.makeSmoke(particle)
   psystem:setLinearAcceleration(-size - 5, -20, size + 5, 0)                                  -- Random movement in all directions.
   psystem:setColors(125 / 255, 125 / 255, 125 / 255, 0.3, 125 / 255, 125 / 255, 125 / 255, 0) -- Fade to transparency.
   particle.psystem = psystem
+end
+
+function TemperatureManager.update(particle,map,dt)
+    local mapArray = map.particles
+    -- First, we collect the neighboring particles
+    local neighbours = particle:getNeighbours(mapArray)
+    TemperatureManager.decomposeParticle(particle,neighbours)
+
+    TemperatureManager.manageFire(particle,mapArray)
+    -- We initiate the temperature propagation.
+    TemperatureManager.propagateTemperature(particle, mapArray, dt)
+        -- If the particle burns, then it decomposes. And its properties (colors)
+    -- are modified to visually make it appear to be on fire.
+    if particle.isBurning then
+      particle.integrity = particle.integrity - particle.chemicalProperties.consumptionRate
+      TemperatureManager.drawFlames(particle)
+    end
 end
 
 return TemperatureManager

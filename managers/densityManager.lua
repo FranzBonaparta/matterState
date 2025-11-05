@@ -141,5 +141,51 @@ function DensityManager.didSlide(particle, map)
     particle.stable = true
     --particle:setColor(255, 0, 0)
 end
+--dispatch comportment depending on particle's state
+function DensityManager.chooseAction(particle,map)
+  local states = { "solid", "granular", "liquid", "gas" }
+      local actions = { DensityManager.didFall, DensityManager.didSlide, DensityManager.didMove, DensityManager.didMove }
+      for i = 1, #states, 1 do
+        if particle.chemicalProperties.state == states[i] then
+          actions[i](particle, map)
+          break
+        end
+      end
+end
 
+--check if the particle need to be activated
+function DensityManager.resetMove(particle,map)
+local d = particle:getNeighbour(map, "down")
+      local u = particle:getNeighbour(map, "up")
+      --if there is no particule solid or granular under, we can fall again!
+      if particle.chemicalProperties.state == "solid" or particle.chemicalProperties.state == "granular" then
+        --check if we are solid or "gas"
+        if d and d.chemicalProperties.state ~= "solid" and d.chemicalProperties.state ~= "granular" then
+          particle.stable = false
+          d.stable=false
+        end
+      end
+      if (particle.chemicalProperties.state == "gas") and d then
+        if particle.chemicalProperties.density > d.chemicalProperties.density and d.chemicalProperties.state == "gas" then
+          particle.stable = false
+          d.stable=false
+        end
+      end
+      if (particle.chemicalProperties.state == "gas") and u then
+        if particle.chemicalProperties.density < u.chemicalProperties.density and u.chemicalProperties.state == "gas" then
+          particle.stable = false
+          u.stable=false
+        end
+      end
+end
+function DensityManager.update(particle,map)
+      -- We check if the particule need to move.
+    if not particle.stable then
+      DensityManager.chooseAction(particle,map)
+    end
+    if particle.stable then
+      DensityManager.resetMove(particle,map.particles)
+    end
+
+end
 return DensityManager
