@@ -60,7 +60,7 @@ function DensityManager.didMove(particle, map)
 end
 
 function DensityManager.didFall(particle, map)
-  local downNeighbour = particle:getDownNeighbour(map.particles)
+  local downNeighbour = particle:getNeighbour(map.particles,"down")
   --local neighbours = particle:getNeighbours(map)
 
   if downNeighbour then
@@ -103,7 +103,7 @@ function DensityManager.getUnstableNeighbours(neighbours)
 end
 
 function DensityManager.didSlide(particle, map)
-  local down = particle:getDownNeighbour(map.particles)
+  local down = particle:getNeighbour(map.particles,"down")
 
   if down then
     --else check if the down neighbour is a stable solid particle
@@ -116,7 +116,7 @@ function DensityManager.didSlide(particle, map)
       return
     end
     --else:make more checks
-    local downNeighbours = particle:getLateralDownNeighbours(map.particles)
+    local downNeighbours = particle:getNeighbours(map.particles,{"downLeft","downRight"})
     table.insert(downNeighbours, down)
     
       local stable = DensityManager.allAreStable(downNeighbours)

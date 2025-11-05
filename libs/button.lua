@@ -107,7 +107,9 @@ function Button:mousepressed(mx, my, button)
         --FxManager.play("click")
     end
 end
-
+function Button:mouseIsHover(mx,my)
+  return self:isHovered(mx,my)
+end
 --run onclick when released
 function Button:mousereleased(mx, my, button)
     if button == 1 and self:isHovered(mx, my)

@@ -9,9 +9,11 @@ function Palette:new(x,y,size)
   self.y=y
   self.size=size
   self.colors={}
+  self.names={}
   self.colorsSelected=nil
   ParticlesData.getColors(self.colors)
-  self.buttons={}
+  ParticlesData.getNames(self.names)
+  self.buttons={}  
   self:initButtons()
 end
 
@@ -25,6 +27,8 @@ function Palette:initButtons()
     button:setImmediate()
     local r,g,b,a=color[1],color[2],color[3],0
     button:setBackgroundColor(r,g,b,a)
+    button:setTooltip(self.names[i],0.5,"top")
+    button.tooltip.boxWidth=150
     button:setOnClick(function()self.colorsSelected=button.backgroundColor end)
     table.insert(self.buttons,button)
   end
@@ -39,9 +43,19 @@ function Palette:draw()
     love.graphics.setColor(r,g,b)
     love.graphics.rectangle("fill",self.x,self.y+(((#self.colors/2)+1)*self.size),self.size,self.size)
   end
+    for _, button in ipairs(self.buttons) do
+    if button.tooltip and button.tooltip.isVisible then
+      button.tooltip:draw()
+    end
+  end
   love.graphics.setColor(1,1,1)
 end
 
+function Palette:update(dt)
+  for _, value in ipairs(self.buttons) do
+    value:update(dt)
+  end
+end
 function Palette:mousepressed(mx,my,button)
   for _, value in ipairs(self.buttons) do
     value:mousepressed(mx,my,button)

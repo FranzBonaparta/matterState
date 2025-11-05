@@ -118,6 +118,13 @@ function ParticlesData.getParticleByName(name)
     end
   end
 end
+function ParticlesData.getNames(namess)
+  for _, element in ipairs(ParticlesData.materials) do
+    if element.name then
+      table.insert(namess,element.name)
+    end
+  end
+end
 function ParticlesData.getColors(colors)
   for _, element in ipairs(ParticlesData.materials) do
     if element.colors then

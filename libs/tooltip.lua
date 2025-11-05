@@ -41,6 +41,7 @@ function Tooltip:new(text, target, delay, position)
     self.position = position or "top" -- left, right, top or bottom
     self.hoverTime = 0                -- mouse hover time over the target
     self.isVisible = false
+    self.boxWidth=250
 end
 
 -- Here, we define the content of the tooltip's text field
@@ -58,20 +59,19 @@ we first check that the Tooltip is visible ]]
         local tooltipX, tooltipY = mx + 10, my + 10
         -- we call the default Löve's font
         local font = love.graphics.getFont()
-        local boxWidth = 250
-        local _, wrappedText = font:getWrap(self.text, boxWidth - 16) --return a table of line
+        local _, wrappedText = font:getWrap(self.text, self.boxWidth - 16) --return a table of line
         local lineHeight = font:getHeight()
         -- make the heigh flexible
         local lineCount = #wrappedText
         local boxHeight = (lineHeight * lineCount) + 16 --+padding
 
-        love.graphics.rectangle("fill", tooltipX, tooltipY, boxWidth, boxHeight, 6, 6)
+        love.graphics.rectangle("fill", tooltipX, tooltipY, self.boxWidth, boxHeight, 6, 6)
         -- clear border
         love.graphics.setColor(1, 1, 1, 0.9)
-        love.graphics.rectangle("line", tooltipX, tooltipY, boxWidth, boxHeight, 6, 6)
+        love.graphics.rectangle("line", tooltipX, tooltipY, self.boxWidth, boxHeight, 6, 6)
         -- text
         love.graphics.setColor(0, 0, 0)
-        love.graphics.printf(self.text, tooltipX + 8, tooltipY + 8, boxWidth - 16)
+        love.graphics.printf(self.text, tooltipX + 8, tooltipY + 8, self.boxWidth - 16)
         -- reset color to white
         love.graphics.setColor(1, 1, 1)
     end

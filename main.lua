@@ -32,6 +32,7 @@ function love.load()
     love.graphics.setBackgroundColor(0.1, 0.1, 0.1) -- dark grey background
     map:init(80)
     palette = Palette(700, 10, 32)
+    palette.buttons[1].onClick()
 end
 
 -- Function called at each frame, it updates the logic of the game
@@ -39,6 +40,10 @@ function love.update(dt)
     -- dt = delta time = time since last frame
     -- Used for fluid movements
     map:update(dt)
+    if palette then
+            palette:update(dt)
+
+    end
 end
 
 -- Function called after each update to draw on screen

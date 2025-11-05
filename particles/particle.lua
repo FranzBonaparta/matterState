@@ -52,7 +52,7 @@ function Particle:new(x, y)
   self.vx = 0
   -- speed into py axe
   self.vy = 0
-  self.color = { 0,0,0 }
+  self.color = { 0, 0, 0 }
   self.name = ""
   self.chemicalProperties = nil
   self.startTemperature = 20
@@ -86,7 +86,7 @@ function Particle:changeName(name)
     else
       self.chemicalProperties:init(name)
     end
-    self.stable=false
+    self.stable = false
   else
     print(string.format("'%s' doesn't exist on particles's table! ref %s", name, self.name))
   end
@@ -110,41 +110,34 @@ end
 
 -- Thanks to the particle array given as a parameter
 --(two-dimensional array), we retrieve the neighboring particles.
-function Particle:getNeighbours(map)
-  local x, y = self.x, self.y
-  -- Thus, the order of checks is as follows:
-  -- up/LeftUp/RightUp/left/right/down/leftDown/rightDown
-  local nx = { x, x - 1, x + 1, x - 1, x + 1, x, x - 1, x + 1 }
-  local ny = { y - 1, y - 1, y - 1, y, y, y + 1, y + 1, y + 1 }
+function Particle:getNeighbours(map, directions)
+  directions = directions or { "top", "down", "right", "left", "topRight", "topLeft", "downRight", "downLeft" }
   local neighbours = {}
-  for i, index in ipairs(ny) do
-    -- if the value exist into the map, we push it into our neighbours array
-    if map[index] and map[index][nx[i]] then
-      table.insert(neighbours, map[index][nx[i]])
+
+  -- Thus, the order of checks is as follows:
+  for _, d in ipairs(directions) do
+    local neighbour = self:getNeighbour(map, d)
+    if neighbour then
+      table.insert(neighbours, neighbour)
     end
   end
+
   return neighbours
 end
 
-function Particle:getDownNeighbour(map)
+function Particle:getNeighbour(map, direction)
   local x, y = self.x, self.y
-  local nx, ny = x, y + 1
-  if map[ny] and map[ny][nx] then
-    return map[ny][nx]
-  end
-  return nil
-end
-
-function Particle:getLateralDownNeighbours(map)
-  local x, y = self.x, self.y
-  local downNeighbours={}
-  local nx, ny= {x-1,x+1}, y + 1
-  for i, newX in ipairs(nx) do
-    if map[ny] and map[ny][newX] then
-      table.insert(downNeighbours,map[ny][newX])
+  local directions = { "top", "down", "right", "left", "topRight", "topLeft", "downRight", "downLeft" }
+  local nx, ny = { x, x, x + 1, x - 1, x + 1, x - 1, x + 1, x - 1 },
+      { y - 1, y + 1, y, y, y - 1, y - 1, y + 1, y + 1 }
+  for i = 1, #directions, 1 do
+    if direction == directions[i] then
+      if map[ny[i]] and map[ny[i]][nx[i]] then
+        return map[ny[i]][nx[i]]
+      end
     end
   end
-  return downNeighbours
+  return nil
 end
 
 -- Just a function created for convenience to retrieve the number of neighboring particles.
@@ -164,10 +157,10 @@ function Particle:initTooltip(map)
   table.insert(lines, string.format("[%i %i]", a, b))
   table.insert(lines, string.format("Avg Temp: %.1f°C", self.temperature))
   table.insert(lines, string.format("NeighboursAmount: %i", neighboursCount))
-  table.insert(lines, string.format("integrity: %i", self.integrity))
+  table.insert(lines, string.format("integrity: %i, density: %.2f", self.integrity,self.chemicalProperties.density))
   local stable = self.stable and "stable" or "unstable"
   table.insert(lines, string.format("%s %s", self.name, stable))
-  table.insert(lines,string.format("%s",self.chemicalProperties.state))
+  table.insert(lines, string.format("%s", self.chemicalProperties.state))
   local text = table.concat(lines, "\n")
   self.toolTip:setText(text)
 end
@@ -220,7 +213,7 @@ function Particle:update(dt, map)
     self.stable = self.chemicalProperties.state == "solid"
   end]]
   -- The timer decreases with each frame.
-  local mapArray=map.particles
+  local mapArray = map.particles
   self.timer = self.timer - dt
   self.toolTip:update(dt)
   -- If the timer has finished, then we can update.
@@ -268,22 +261,40 @@ function Particle:update(dt, map)
     TemperatureManager.propagateTemperature(self, mapArray, dt)
     -- We check if the particule need to move.
     if not self.stable then
-      local states={"solid","granular","liquid","gas"}
-      local actions={DensityManager.didFall,DensityManager.didSlide,DensityManager.didMove,DensityManager.didMove}
+      local states = { "solid", "granular", "liquid", "gas" }
+      local actions = { DensityManager.didFall, DensityManager.didSlide, DensityManager.didMove, DensityManager.didMove }
       for i = 1, #states, 1 do
-        if self.chemicalProperties.state ==states[i] then
+        if self.chemicalProperties.state == states[i] then
           actions[i](self, map)
           break
         end
       end
     end
-    --if there is no particule solid or granular under, we can fall again!
-    if self.stable and (self.chemicalProperties.state=="solid" or self.chemicalProperties.state=="granular") then
-      local n=self:getDownNeighbour(mapArray)
-      if n and n.chemicalProperties.state~="solid" and n.chemicalProperties.state~="granular"then
-        self.stable=false
+    if self.stable then
+      local d = self:getNeighbour(mapArray, "down")
+      local u = self:getNeighbour(mapArray, "up")
+      --if there is no particule solid or granular under, we can fall again!
+      if self.chemicalProperties.state == "solid" or self.chemicalProperties.state == "granular" then
+        --check if we are solid or "gas"
+        if d and d.chemicalProperties.state ~= "solid" and d.chemicalProperties.state ~= "granular" then
+          self.stable = false
+          d.stable=false
+        end
+      end
+      if (self.chemicalProperties.state == "gas") and d then
+        if self.chemicalProperties.density > d.chemicalProperties.density and d.chemicalProperties.state == "gas" then
+          self.stable = false
+          d.stable=false
+        end
+      end
+      if (self.chemicalProperties.state == "gas") and u then
+        if self.chemicalProperties.density < u.chemicalProperties.density and u.chemicalProperties.state == "gas" then
+          self.stable = false
+          u.stable=false
+        end
       end
     end
+
     -- If the particle burns, then it decomposes. And its properties (colors)
     -- are modified to visually make it appear to be on fire.
     if self.isBurning then
