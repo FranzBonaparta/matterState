@@ -245,7 +245,7 @@ function Particle:update(dt, map)
     end
     if not self.stable or self.isBurning then
       DensityManager.update(self, map)
-      timer = 0.5
+      --timer = 0.5
     end
     TemperatureManager.update(self, map, dt)
     self.timer = timer
