@@ -157,7 +157,7 @@ function Particle:initTooltip(map)
   table.insert(lines, string.format("[%i %i]", a, b))
   table.insert(lines, string.format("Avg Temp: %.1f°C", self.temperature))
   table.insert(lines, string.format("NeighboursAmount: %i", neighboursCount))
-  table.insert(lines, string.format("integrity: %i, density: %.2f", self.integrity,self.chemicalProperties.density))
+  table.insert(lines, string.format("integrity: %i, density: %.2f", self.integrity, self.chemicalProperties.density))
   local stable = self.stable and "stable" or "unstable"
   table.insert(lines, string.format("%s %s", self.name, stable))
   table.insert(lines, string.format("%s", self.chemicalProperties.state))
@@ -208,18 +208,13 @@ well as its neighbors: their stability, their integrity,
 whether they are already burning.
 We will also need to propagate temperature, fire, smoke, etc.]]
 function Particle:update(dt, map)
-  -- First, we check if the particle is solid; in which case it must be stable.
-  --[[  if not self.stable and self.chemicalProperties then
-    self.stable = self.chemicalProperties.state == "solid"
-  end]]
   -- The timer decreases with each frame.
-  local mapArray = map.particles
   self.timer = self.timer - dt
   self.toolTip:update(dt)
   -- If the timer has finished, then we can update.
   if self.timer <= 0 then
-       DensityManager.update(self,map)
-    TemperatureManager.update(self,map,dt)
+    DensityManager.update(self, map)
+    TemperatureManager.update(self, map, dt)
     self.timer = 0.5
   end
   -- If the particle has a ParticleSystem, it is updated.

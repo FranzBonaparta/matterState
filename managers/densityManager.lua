@@ -60,7 +60,7 @@ function DensityManager.didMove(particle, map)
 end
 
 function DensityManager.didFall(particle, map)
-  local downNeighbour = particle:getNeighbour(map.particles,"down")
+  local downNeighbour = particle:getNeighbour(map.particles, "down")
   --local neighbours = particle:getNeighbours(map)
 
   if downNeighbour then
@@ -71,11 +71,11 @@ function DensityManager.didFall(particle, map)
       map:swapParticles(particle, downNeighbour)
     elseif downNeighbour.chemicalProperties.state == "solid" then
       particle.stable = downNeighbour.stable
-      elseif downNeighbour.chemicalProperties.state == "granular" and downNeighbour.stable then
-    particle.stable =true
-      end
+    elseif downNeighbour.chemicalProperties.state == "granular" and downNeighbour.stable then
+      particle.stable = true
+    end
   else
-    particle.stable=true
+    particle.stable = true
   end
 end
 
@@ -95,7 +95,7 @@ function DensityManager.getUnstableNeighbours(neighbours)
   for _, neighbour in ipairs(neighbours) do
     local state = neighbour.chemicalProperties.state
     --If the neighbour is liquid or gas, the particule is elligible to swap
-    if (state == "granular" and not neighbour.stable) or state == "gas" or state=="liquid" then
+    if (state == "granular" and not neighbour.stable) or state == "gas" or state == "liquid" then
       table.insert(elligibles, neighbour)
     end
   end
@@ -103,7 +103,7 @@ function DensityManager.getUnstableNeighbours(neighbours)
 end
 
 function DensityManager.didSlide(particle, map)
-  local down = particle:getNeighbour(map.particles,"down")
+  local down = particle:getNeighbour(map.particles, "down")
 
   if down then
     --else check if the down neighbour is a stable solid particle
@@ -116,76 +116,78 @@ function DensityManager.didSlide(particle, map)
       return
     end
     --else:make more checks
-    local downNeighbours = particle:getNeighbours(map.particles,{"downLeft","downRight"})
+    local downNeighbours = particle:getNeighbours(map.particles, { "downLeft", "downRight" })
     table.insert(downNeighbours, down)
-    
-      local stable = DensityManager.allAreStable(downNeighbours)
-      if not stable and down.chemicalProperties.state~="solid" then
+
+    local stable = DensityManager.allAreStable(downNeighbours)
+    if not stable and down.chemicalProperties.state ~= "solid" then
       local elligibles = DensityManager.getUnstableNeighbours(downNeighbours)
-    if #elligibles > 0 then  
+      if #elligibles > 0 then
         particle.stable = false
         local target = elligibles[math.random(1, #elligibles)]
         -- on tombe
-          if target.chemicalProperties.state=="granular" then
-            particle.stable=true
-            --[[particle:setColor(255, 0, 0) 
+        if target.chemicalProperties.state == "granular" then
+          particle.stable = true
+          --[[particle:setColor(255, 0, 0)
           else
             particle:setColor(0, 0, 255)]]
-          end
-          map:swapParticles(particle, target)
+        end
+        map:swapParticles(particle, target)
         return
       end
     end
   end
-    --check if we are on map's border
-    particle.stable = true
-    --particle:setColor(255, 0, 0)
+  --check if we are on map's border
+  particle.stable = true
+  --particle:setColor(255, 0, 0)
 end
+
 --dispatch comportment depending on particle's state
-function DensityManager.chooseAction(particle,map)
+function DensityManager.chooseAction(particle, map)
   local states = { "solid", "granular", "liquid", "gas" }
-      local actions = { DensityManager.didFall, DensityManager.didSlide, DensityManager.didMove, DensityManager.didMove }
-      for i = 1, #states, 1 do
-        if particle.chemicalProperties.state == states[i] then
-          actions[i](particle, map)
-          break
-        end
-      end
+  local actions = { DensityManager.didFall, DensityManager.didSlide, DensityManager.didMove, DensityManager.didMove }
+  for i = 1, #states, 1 do
+    if particle.chemicalProperties.state == states[i] then
+      actions[i](particle, map)
+      break
+    end
+  end
 end
 
 --check if the particle need to be activated
-function DensityManager.resetMove(particle,map)
-local d = particle:getNeighbour(map, "down")
-      local u = particle:getNeighbour(map, "up")
-      --if there is no particule solid or granular under, we can fall again!
-      if particle.chemicalProperties.state == "solid" or particle.chemicalProperties.state == "granular" then
-        --check if we are solid or "gas"
-        if d and d.chemicalProperties.state ~= "solid" and d.chemicalProperties.state ~= "granular" then
-          particle.stable = false
-          d.stable=false
-        end
-      end
-      if (particle.chemicalProperties.state == "gas") and d then
-        if particle.chemicalProperties.density > d.chemicalProperties.density and d.chemicalProperties.state == "gas" then
-          particle.stable = false
-          d.stable=false
-        end
-      end
-      if (particle.chemicalProperties.state == "gas") and u then
-        if particle.chemicalProperties.density < u.chemicalProperties.density and u.chemicalProperties.state == "gas" then
-          particle.stable = false
-          u.stable=false
-        end
-      end
+function DensityManager.resetMove(particle, map)
+  local d = particle:getNeighbour(map, "down")
+  local u = particle:getNeighbour(map, "up")
+  --if there is no particule solid or granular under, we can fall again!
+  if particle.chemicalProperties.state == "solid" or particle.chemicalProperties.state == "granular" then
+    --check if we are solid or "gas"
+    if d and d.chemicalProperties.state ~= "solid" and d.chemicalProperties.state ~= "granular" then
+      particle.stable = false
+      d.stable = false
+    end
+  end
+  if (particle.chemicalProperties.state == "gas") and d then
+    if particle.chemicalProperties.density > d.chemicalProperties.density and d.chemicalProperties.state == "gas" then
+      particle.stable = false
+      d.stable = false
+    end
+  end
+  if (particle.chemicalProperties.state == "gas") and u then
+    if particle.chemicalProperties.density < u.chemicalProperties.density and u.chemicalProperties.state == "gas" then
+      particle.stable = false
+      u.stable = false
+    end
+  end
 end
-function DensityManager.update(particle,map)
-      -- We check if the particule need to move.
-    if not particle.stable then
-      DensityManager.chooseAction(particle,map)
-    end
-    if particle.stable then
-      DensityManager.resetMove(particle,map.particles)
-    end
 
+function DensityManager.update(particle, map)
+  -- We check if the particule need to move.
+  if not particle.stable then
+    DensityManager.chooseAction(particle, map)
+  end
+  if particle.stable then
+    DensityManager.resetMove(particle, map.particles)
+  end
 end
+
 return DensityManager
