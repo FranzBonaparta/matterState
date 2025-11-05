@@ -22,7 +22,7 @@
 ]]
 
 local Map = require("UI.map")
-local map = Map()
+local map = Map(80)
 local Info = require("info")
 local Palette = require("UI.palette")
 local palette = nil
@@ -30,7 +30,6 @@ local palette = nil
 function love.load()
     -- Initialization of resources (images, sounds, variables)
     love.graphics.setBackgroundColor(0.1, 0.1, 0.1) -- dark grey background
-    map:init(80)
     palette = Palette(700, 10, 32)
     palette.buttons[1].onClick()
 end
@@ -41,8 +40,7 @@ function love.update(dt)
     -- Used for fluid movements
     map:update(dt)
     if palette then
-            palette:update(dt)
-
+        palette:update(dt)
     end
 end
 

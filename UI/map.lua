@@ -34,9 +34,42 @@ local Particle = require("particles.particle")
 local Map = Object:extend()
 local ParticlesData = require("particles.particlesData")
 
-function Map:new()
+function Map:new(size)
   self.particles = {}
+  self.width = size
+  self.height = size
+  -- Here, we hard-define the logic for creating our map. The values ​​are chosen purely for convenience.
+  for y = 1, self.height do
+    for x = 1, self.width do
+      local index = (y - 1) * self.width + x
+      local p = Particle(x, y)
+      local name = ""
+      if y >= size - 4 then
+        if x % 16 == 10 or x % 16 == 11 or x % 16 == 12 or x % 16 == 13 then
+          name = "stone"
+        else
+          name = "soil"
+        end
+      elseif y < size - 4 and y > 40 and (x % 20 == 10 or x % 20 == 11 or x % 20 == 12) then
+        name = "wood"
+      elseif (y <= size - 4 and y >= size - 12) and x % 20 ~= 10 then
+        name = "carbonDioxide"
+      else
+        name = "oxygen"
+      end
+
+      p:changeName(name)
+      if p.chemicalProperties.state == "solid" then
+        p.stable = true
+      end
+      self.particles[index] = p
+    end
+  end
+  for _, p in ipairs(self.particles) do
+    p:setNeighbours(self)
+  end
 end
+
 -- Here, we hard-define the logic for creating our map. The values ​​are chosen purely for convenience.
 function Map:init(size)
   self.particles = {}
@@ -51,7 +84,7 @@ function Map:init(size)
         else
           name = "soil"
         end
-      elseif y < size - 4 and y > 40 and (x % 20 ==10 or x % 20 ==11 or x % 20 ==12) then
+      elseif y < size - 4 and y > 40 and (x % 20 == 10 or x % 20 == 11 or x % 20 == 12) then
         name = "wood"
       elseif (y <= size - 4 and y >= size - 12) and x % 20 ~= 10 then
         name = "carbonDioxide"
@@ -62,11 +95,23 @@ function Map:init(size)
       table.insert(self.particles[y], particle)
     end
   end
-   for _, particle in ipairs(self.particles[#self.particles]) do
+  for _, particle in ipairs(self.particles[#self.particles]) do
     if particle.chemicalProperties.state == "solid" then
       particle.stable = true
     end
   end
+end
+
+function Map:getIndex(x, y)
+  if x < 1 or x > self.width or y < 1 or y > self.height then
+    return nil
+  end
+  return (y - 1) * self.width + x
+end
+
+function Map:getParticle(x, y)
+  local idx = self:getIndex(x, y)
+  return idx and self.particles[idx] or nil
 end
 
 -- This allow to change a particle after selecting a new sort of element in the palette
@@ -74,15 +119,21 @@ function Map:changeParticuleByColor(colors, x, y)
   local r, g, b = colors[1], colors[2], colors[3]
   local element = ParticlesData.getParticleByColors(r, g, b)
   if element and element.name then
-    local newParticle = Particle(x, y)
-    newParticle:changeName(element.name)
-    self.particles[y][x] = newParticle
+    local p = self:getParticle(x, y)
+    if p then
+      p:changeName(element.name)
+    end
   end
 end
 
 function Map:swapParticles(p1, p2)
-  if p1.lastSwapIndex ~= p2.index and p1.index~= p2.lastSwapIndex
+  if p1.lastSwapIndex ~= p2.index and p1.index ~= p2.lastSwapIndex
   then
+    local i1 = self:getIndex(p1.x, p1.y)
+    local i2 = self:getIndex(p2.x, p2.y)
+    if not i1 or not i2 then return end
+    self.particles[i1], self.particles[i2] = self.particles[i2], self.particles[i1]
+
     local x, y = p1.x, p1.y
     local nx, ny = p2.x, p2.y
     local px, py = p1.px, p1.py
@@ -93,48 +144,53 @@ function Map:swapParticles(p1, p2)
     p1.x, p1.y = nx, ny
     p2.px, p2.py = px, py
     p2.x, p2.y = x, y
-    -- And we push the modified particules into the map
-    if self.particles[y] and self.particles[ny] and self.particles[y][x] and self.particles[ny][nx] then
-      self.particles[y][x] = p2
-      self.particles[ny][nx] = p1
+    p1:setNeighbours(self)
+    p2:setNeighbours(self)
+    local p1n = p1.neighbours
+    local p2n = p2.neighbours
+    for _, n in ipairs(p1n) do
+      local neighbour = n.value
+      if neighbour.index ~= p2.index then
+        neighbour:setNeighbours(self)
+      end
+    end
+    for _, n in ipairs(p2n) do
+      local neighbour = n.value
+      if neighbour.index ~= p1.index then
+        neighbour:setNeighbours(self)
+      end
     end
   end
 end
 
 function Map:draw()
-  for _, line in ipairs(self.particles) do
-    for _, particle in ipairs(line) do
-      particle:draw()
-    end
+  for _, particle in ipairs(self.particles) do
+    particle:draw()
   end
-  for _, line in ipairs(self.particles) do
-    for _, particle in ipairs(line) do
-      particle.toolTip:draw()
-    end
+  for _, particle in ipairs(self.particles) do
+    particle.toolTip:draw()
   end
 end
+
 function Map:mousepressed(mx, my, button, colors)
   if colors then
-    for y, line in ipairs(self.particles) do
-      for x, particle in ipairs(line) do
-        particle:mousepressed(mx, my, button)
-        if particle.mouseIsHover and particle:mouseIsHover(mx, my) and button == 2 then
-          self:changeParticuleByColor(colors, x, y)
-          return
-        end
+    for y, particle in ipairs(self.particles) do
+      particle:mousepressed(mx, my, button)
+      if particle.mouseIsHover and particle:mouseIsHover(mx, my) and button == 2 then
+        self:changeParticuleByColor(colors, particle.x, particle.y)
+        return
       end
     end
   end
 end
+
 function Map:update(dt)
   local mx, my = love.mouse.getPosition()
-  for _, line in ipairs(self.particles) do
-    for _, particle in ipairs(line) do
-      particle:update(dt, self)
-      -- It's only here that we check if a particle is hovered over, in order to activate its Tooltip.
-      if particle:mouseIsHover(mx, my) then
-        particle:initTooltip(self.particles)
-      end
+  for _, particle in ipairs(self.particles) do
+    particle:update(dt, self)
+    -- It's only here that we check if a particle is hovered over, in order to activate its Tooltip.
+    if particle:mouseIsHover(mx, my) then
+      particle:initTooltip(self)
     end
   end
 end

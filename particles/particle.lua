@@ -69,6 +69,7 @@ function Particle:new(x, y)
   self.lastSwapIndex = self.index
   self.psystem = nil -- Löve's ParticleSystem
   particleIndex = particleIndex + 1
+  self.neighbours = {}
 end
 
 --[[This function is called during particle creation and transformation,
@@ -108,6 +109,11 @@ function Particle:setColor(r, g, b)
   self.color = { r, g, b }
 end
 
+function Particle:setNeighbours(map)
+  local neighbours = self:getNeighbours(map)
+  self.neighbours = neighbours
+end
+
 -- Thanks to the particle array given as a parameter
 --(two-dimensional array), we retrieve the neighboring particles.
 function Particle:getNeighbours(map, directions)
@@ -118,10 +124,32 @@ function Particle:getNeighbours(map, directions)
   for _, d in ipairs(directions) do
     local neighbour = self:getNeighbour(map, d)
     if neighbour then
-      table.insert(neighbours, neighbour)
+      table.insert(neighbours, { value = neighbour, direction = d })
     end
   end
 
+  return neighbours
+end
+
+function Particle:findNeighbour(direction)
+  for _, n in ipairs(self.neighbours) do
+    if n.direction == direction then
+      return n.value
+    end
+  end
+  return nil
+end
+
+function Particle:findNeighbours(directions)
+  local neighbours = {}
+  for _, d in ipairs(directions) do
+    for _, n in ipairs(self.neighbours) do
+      if n.direction == d then
+        table.insert(neighbours, n)
+      end
+    end
+  end
+  --return an array of {value=neighbour, direction=text}
   return neighbours
 end
 
@@ -132,9 +160,7 @@ function Particle:getNeighbour(map, direction)
       { y - 1, y + 1, y, y, y - 1, y - 1, y + 1, y + 1 }
   for i = 1, #directions, 1 do
     if direction == directions[i] then
-      if map[ny[i]] and map[ny[i]][nx[i]] then
-        return map[ny[i]][nx[i]]
-      end
+      return map:getParticle(nx[i], ny[i])
     end
   end
   return nil
@@ -213,9 +239,16 @@ function Particle:update(dt, map)
   self.toolTip:update(dt)
   -- If the timer has finished, then we can update.
   if self.timer <= 0 then
-    DensityManager.update(self, map)
+    local timer = 1
+    if self.stable then
+      DensityManager.resetMove(self)
+    end
+    if not self.stable or self.isBurning then
+      DensityManager.update(self, map)
+      timer = 0.5
+    end
     TemperatureManager.update(self, map, dt)
-    self.timer = 0.5
+    self.timer = timer
   end
   -- If the particle has a ParticleSystem, it is updated.
   if self.psystem then

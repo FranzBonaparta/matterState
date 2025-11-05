@@ -33,9 +33,10 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 local TemperatureManager = {}
 -- Check if the particle is flammable, hot enough to burn, and if it has a neighbor that is an oxidizer.
 function TemperatureManager.canBurn(particle, map)
-  local neighbours = particle:getNeighbours(map)
+  local neighbours = particle.neighbours
   if #neighbours == 0 then return false end
-  for _, neighbour in ipairs(neighbours) do
+  for _, n in ipairs(neighbours) do
+    local neighbour = n.value
     if neighbour.chemicalProperties and neighbour.chemicalProperties.isOxidant then
       return particle.temperature >= (particle.chemicalProperties.ignitionPoint - 50) and
           particle.chemicalProperties.isFlammable
@@ -46,7 +47,7 @@ end
 
 function TemperatureManager.propagateTemperature(particle, map, dt)
   local delta = math.floor(dt * 1000)
-  local neighbours = particle:getNeighbours(map)
+  local neighbours = particle.neighbours
   if not particle.chemicalProperties or #neighbours == 0 then return end
   -- If the particle is burning, but its temperature is still not at its maximum, then it is heating up.
   if particle.isBurning and particle.temperature <= particle.chemicalProperties.maxTemperature then
@@ -54,14 +55,16 @@ function TemperatureManager.propagateTemperature(particle, map, dt)
   end
   -- Now we check if the particle has a neighbor on fire.
   local hasBurn = false
-  for _, neighbour in ipairs(neighbours) do
+  for _, n in ipairs(neighbours) do
+    local neighbour = n.value
     if neighbour.isBurning then
       hasBurn = true
       break
     end
   end
 
-  for _, neighbour in ipairs(neighbours) do
+  for _, n in ipairs(neighbours) do
+    local neighbour = n.value
     local diff = neighbour.temperature - particle.temperature
     --ignition
     if neighbour.isBurning and particle.chemicalProperties.isFlammable and particle.temperature >= particle.chemicalProperties.ignitionPoint - 50 then
@@ -104,13 +107,16 @@ end
 function TemperatureManager.decomposeParticle(particle, neighbours)
   if particle.isBurning then
     -- If the particle burns, it decomposes its neighbors.
-    for _, neighbour in ipairs(neighbours) do
+    for _, n in ipairs(neighbours) do
+      local neighbour = n.value
       if not neighbour.isBurning then
         neighbour.integrity = math.max(0, neighbour.integrity - 1)
       end
     end
   end
-  for _, neighbour in ipairs(neighbours) do
+  for _, n in ipairs(neighbours) do
+    local neighbour = n.value
+
     -- If the neighboring particle is decomposed and it is oxygen, then it is transformed.
     if neighbour.integrity <= 0 and neighbour.name == "oxygen" then
       local child = neighbour.chemicalProperties.consumptionChild
@@ -170,14 +176,13 @@ function TemperatureManager.makeSmoke(particle)
 end
 
 function TemperatureManager.update(particle, map, dt)
-  local mapArray = map.particles
   -- First, we collect the neighboring particles
-  local neighbours = particle:getNeighbours(mapArray)
+  local neighbours = particle.neighbours
   TemperatureManager.decomposeParticle(particle, neighbours)
 
-  TemperatureManager.manageFire(particle, mapArray)
+  TemperatureManager.manageFire(particle, map)
   -- We initiate the temperature propagation.
-  TemperatureManager.propagateTemperature(particle, mapArray, dt)
+  TemperatureManager.propagateTemperature(particle, map, dt)
   -- If the particle burns, then it decomposes. And its properties (colors)
   -- are modified to visually make it appear to be on fire.
   if particle.isBurning then

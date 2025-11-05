@@ -33,9 +33,9 @@ local DensityManager = {}
 -- We are trying to determine if the targeted particle needs to move.
 function DensityManager.didMove(particle, map)
   --  In the case of movement, we collect neighboring particles.
-  local neighbours = particle:getNeighbours(map.particles)
+  local neighbours = particle.neighbours
   for i = #neighbours, 1, -1 do
-    local neighbour = neighbours[i]
+    local neighbour = neighbours[i].value
     -- If the neighboring substance is solid or not of the same type (liquid, gas): it is incompatible
     local incompatible = neighbour.state == "solid" or
         particle.chemicalProperties.state ~= neighbour.chemicalProperties.state
@@ -55,13 +55,12 @@ function DensityManager.didMove(particle, map)
   -- If, despite this, the particle is unstable, then we proceed with the exchange of positions.
   if not particle.stable then
     --particle:swap(neighbours[1],map)
-    map:swapParticles(particle, neighbours[1])
+    map:swapParticles(particle, neighbours[1].value)
   end
 end
 
 function DensityManager.didFall(particle, map)
-  local downNeighbour = particle:getNeighbour(map.particles, "down")
-  --local neighbours = particle:getNeighbours(map)
+  local downNeighbour = particle:findNeighbour("down")
 
   if downNeighbour then
     if downNeighbour.chemicalProperties.state == "solid" and downNeighbour.stable then
@@ -81,9 +80,10 @@ end
 
 function DensityManager.allAreStable(neighbours)
   for _, n in ipairs(neighbours) do
-    local s = n.chemicalProperties.state
+    local neighbour = n.value
+    local s = neighbour.chemicalProperties.state
     --If the neighbour is liquid or gas, we fall
-    if not n.stable or s == "liquid" or s == "gas" then
+    if not neighbour.stable or s == "liquid" or s == "gas" then
       return false
     end
   end
@@ -92,7 +92,8 @@ end
 
 function DensityManager.getUnstableNeighbours(neighbours)
   local elligibles = {}
-  for _, neighbour in ipairs(neighbours) do
+  for _, n in ipairs(neighbours) do
+    local neighbour = n.value
     local state = neighbour.chemicalProperties.state
     --If the neighbour is liquid or gas, the particule is elligible to swap
     if (state == "granular" and not neighbour.stable) or state == "gas" or state == "liquid" then
@@ -103,7 +104,7 @@ function DensityManager.getUnstableNeighbours(neighbours)
 end
 
 function DensityManager.didSlide(particle, map)
-  local down = particle:getNeighbour(map.particles, "down")
+  local down = particle:findNeighbour("down")
 
   if down then
     --else check if the down neighbour is a stable solid particle
@@ -116,8 +117,8 @@ function DensityManager.didSlide(particle, map)
       return
     end
     --else:make more checks
-    local downNeighbours = particle:getNeighbours(map.particles, { "downLeft", "downRight" })
-    table.insert(downNeighbours, down)
+    local downNeighbours = particle:findNeighbours({ "downLeft", "downRight" })
+    table.insert(downNeighbours, { value = down, direction = "down" })
 
     local stable = DensityManager.allAreStable(downNeighbours)
     if not stable and down.chemicalProperties.state ~= "solid" then
@@ -155,9 +156,9 @@ function DensityManager.chooseAction(particle, map)
 end
 
 --check if the particle need to be activated
-function DensityManager.resetMove(particle, map)
-  local d = particle:getNeighbour(map, "down")
-  local u = particle:getNeighbour(map, "up")
+function DensityManager.resetMove(particle)
+  local d = particle:findNeighbour("down")
+  local u = particle:findNeighbour("up")
   --if there is no particule solid or granular under, we can fall again!
   if particle.chemicalProperties.state == "solid" or particle.chemicalProperties.state == "granular" then
     --check if we are solid or "gas"
@@ -184,9 +185,6 @@ function DensityManager.update(particle, map)
   -- We check if the particule need to move.
   if not particle.stable then
     DensityManager.chooseAction(particle, map)
-  end
-  if particle.stable then
-    DensityManager.resetMove(particle, map.particles)
   end
 end
 
