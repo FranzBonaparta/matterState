@@ -23,9 +23,9 @@
 
 local Map = require("UI.map")
 local map = Map(80)
-local Info = require("info")
 local Palette = require("UI.palette")
 local palette = nil
+local Info=require("info")
 -- Function called only once at the beginning
 function love.load()
     -- Initialization of resources (images, sounds, variables)
