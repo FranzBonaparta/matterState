@@ -48,7 +48,7 @@ end
 function love.draw()
     -- Everything that needs to be displayed passes here
     local startTime = love.timer.getTime()
-    love.graphics.setColor(1, 1, 1)
+    --love.graphics.setColor(1, 1, 1)
     map:draw()
     if palette then
         palette:draw()

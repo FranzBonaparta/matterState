@@ -235,11 +235,8 @@ whether they are already burning.
 We will also need to propagate temperature, fire, smoke, etc.]]
 function Particle:update(dt, map)
   -- The timer decreases with each frame.
-  self.timer = self.timer - dt
-  self.toolTip:update(dt)
   -- If the timer has finished, then we can update.
-  if self.timer <= 0 then
-    local timer = 1
+
     if self.stable then
       DensityManager.resetMove(self)
     end
@@ -248,13 +245,11 @@ function Particle:update(dt, map)
       --timer = 0.5
     end
     TemperatureManager.update(self, map, dt)
-    self.timer = timer
-  end
-  -- If the particle has a ParticleSystem, it is updated.
+      -- If the particle has a ParticleSystem, it is updated.
   if self.psystem then
     self.psystem:update(dt)
     self.psystem:setEmitterLifetime(self.integrity)
   end
-end
+  end
 
 return Particle

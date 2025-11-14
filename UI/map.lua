@@ -33,11 +33,15 @@ local Object = require("libs.classic")
 local Particle = require("particles.particle")
 local Map = Object:extend()
 local ParticlesData = require("particles.particlesData")
+local TileRenderer = require("tileRenderer")
 
 function Map:new(size)
   self.particles = {}
   self.width = size
   self.height = size
+  TileRenderer.init()
+  self.timer = 1 -- Limits updates to save calculations.
+  self.canvas = love.graphics.newCanvas()
   -- Here, we hard-define the logic for creating our map. The values ​​are chosen purely for convenience.
   for y = 1, self.height do
     for x = 1, self.width do
@@ -68,6 +72,7 @@ function Map:new(size)
   for _, p in ipairs(self.particles) do
     p:setNeighbours(self)
   end
+  self:updateCanvas()
 end
 
 -- Here, we hard-define the logic for creating our map. The values ​​are chosen purely for convenience.
@@ -100,6 +105,23 @@ function Map:init(size)
       particle.stable = true
     end
   end
+end
+
+function Map:updateCanvas()
+  love.graphics.setCanvas(self.canvas)
+  love.graphics.clear()
+
+  for _, particle in ipairs(self.particles) do
+    if particle.isBurning then
+      local colors = { "red", "orange", "yellow" }
+      local rand = math.random(3)
+      TileRenderer.drawTile(colors[rand], particle.px, particle.py)
+    else
+      TileRenderer.drawTile(particle.name, particle.px, particle.py)
+    end
+    love.graphics.setColor(1, 1, 1)
+  end
+  love.graphics.setCanvas()
 end
 
 function Map:getIndex(x, y)
@@ -164,11 +186,17 @@ function Map:swapParticles(p1, p2)
 end
 
 function Map:draw()
-  for _, particle in ipairs(self.particles) do
+  --[[for _, particle in ipairs(self.particles) do
     particle:draw()
-  end
-  for _, particle in ipairs(self.particles) do
+  end]]
+  love.graphics.setColor(1, 1, 1)
+
+  love.graphics.draw(self.canvas, 0, 0)
+   for _, particle in ipairs(self.particles) do
     particle.toolTip:draw()
+     --[[  if particle.psystem then
+    love.graphics.draw(particle.psystem, particle.px, particle.py)
+  end]]
   end
 end
 
@@ -178,6 +206,7 @@ function Map:mousepressed(mx, my, button, colors)
       particle:mousepressed(mx, my, button)
       if particle.mouseIsHover and particle:mouseIsHover(mx, my) and button == 2 then
         self:changeParticuleByColor(colors, particle.x, particle.y)
+        self:updateCanvas()
         return
       end
     end
@@ -186,12 +215,21 @@ end
 
 function Map:update(dt)
   local mx, my = love.mouse.getPosition()
-  for _, particle in ipairs(self.particles) do
-    particle:update(dt, self)
-    -- It's only here that we check if a particle is hovered over, in order to activate its Tooltip.
-    if particle:mouseIsHover(mx, my) then
-      particle:initTooltip(self)
+  self.timer = self.timer - dt
+  if self.timer <= 0 then
+    for _, particle in ipairs(self.particles) do
+      
+      particle:update(dt, self)
+      -- It's only here that we check if a particle is hovered over, in order to activate its Tooltip.
+      if particle:mouseIsHover(mx, my) then
+        particle:initTooltip(self)
+      end
     end
+    self:updateCanvas()
+    self.timer = 0.5
+  end
+  for _, particle in ipairs(self.particles) do
+    particle.toolTip:update(dt)
   end
 end
 
