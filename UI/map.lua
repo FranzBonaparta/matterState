@@ -40,14 +40,14 @@ function Map:new(size)
   self.particles = {}
   self.width = size
   self.height = size
-  TileRenderer.init()
+  TileRenderer.init()    -- initialization of canvas models
   self.timer = 1         -- Limits updates to save calculations.
   self.isHovered = false -- Activate or desactivate the Tooltip
   self.toolTip = Tooltip("", self, 0.2)
   self.tooltipTarget = { 1, 1 }
-  self.canvas = love.graphics.newCanvas()
-  self.size = 8
-  self:init(size)
+  self.canvas = love.graphics.newCanvas() --magic function to delegate the draw to the GPU!
+  self.psize = 8 --size of a particle
+  self:init(size) --particles initialization
   for _, line in ipairs(self.particles) do
     for _, p in ipairs(line) do
       p:setNeighbours(self)
@@ -141,7 +141,7 @@ function Map:changeParticuleByColor(colors, x, y)
 end
 
 function Map:getParticle(mx, my)
-  local x, y = math.floor(mx / self.size) , math.floor(my / self.size) 
+  local x, y = math.floor(mx / self.psize) , math.floor(my / self.psize) 
   local particle = self.particles[y] and self.particles[y][x] or nil
   return particle
 end
@@ -187,8 +187,8 @@ end
 -- We check if the mouse is hover the particle
 function Map:mouseIsHover(mx, my)
   local isHover = false
-  if mx >= self.size and mx <= (#self.particles[1] + 1) * self.size and
-      my >= self.size and my <= (#self.particles + 1) * self.size then
+  if mx >= self.psize and mx <= (#self.particles[1] + 1) * self.psize and
+      my >= self.psize and my <= (#self.particles + 1) * self.psize then
     isHover = true
   end
   return isHover
