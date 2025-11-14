@@ -32,7 +32,6 @@ with this program. If not, see <https://www.gnu.org/licenses/>.
 ]]
 local Object = require("libs.classic")
 local Particle = Object:extend()
-local Tooltip = require("libs.tooltip")
 local TemperatureManager = require("managers.temperatureManager")
 local DensityManager = require("managers.densityManager")
 local ParticlesData = require("particles.particlesData")
@@ -61,7 +60,6 @@ function Particle:new(x, y)
   self.time = math.random() * 10
   self.stable = false    -- Determine if the particule need to move
   self.timer = 1         -- Limits updates to save calculations.
-
   self.integrity = 100   -- If this number reaches zero, the particle,
   -- if it can, decomposes into another substance.
   self.lastSwapIndex = self.index
@@ -125,7 +123,6 @@ function Particle:getNeighbours(map, directions)
       table.insert(neighbours, { value = neighbour, direction = d })
     end
   end
-
   return neighbours
 end
 
@@ -161,7 +158,6 @@ function Particle:getNeighbour(map, direction)
       if map.particles[ny[i]] and map.particles[ny[i]][nx[i]] then
         return map.particles[ny[i]][nx[i]]
       end
-      
     end
   end
   return nil
@@ -220,19 +216,19 @@ function Particle:update(dt, map)
   -- The timer decreases with each frame.
   -- If the timer has finished, then we can update.
 
-    if self.stable then
-      DensityManager.resetMove(self)
-    end
-    if not self.stable or self.isBurning then
-      DensityManager.update(self, map)
-      --timer = 0.5
-    end
-    TemperatureManager.update(self, map, dt)
-      -- If the particle has a ParticleSystem, it is updated.
+  if self.stable then
+    DensityManager.resetMove(self)
+  end
+  if not self.stable or self.isBurning then
+    DensityManager.update(self, map)
+    --timer = 0.5
+  end
+  TemperatureManager.update(self, map, dt)
+  -- If the particle has a ParticleSystem, it is updated.
   if self.psystem then
     self.psystem:update(dt)
     self.psystem:setEmitterLifetime(self.integrity)
   end
-  end
+end
 
 return Particle

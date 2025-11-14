@@ -45,7 +45,7 @@ function Map:new(size)
   self.isHovered = false -- Activate or desactivate the Tooltip
   self.toolTip = Tooltip("", self, 0.2)
   self.tooltipTarget = { 1, 1 }
-  self.canvas = love.graphics.newCanvas() --magic function to delegate the draw to the GPU!
+  self.canvas = love.graphics.newCanvas() -- Offload rendering to the GPU via a dedicated framebuffer
   self.psize = 8 --size of a particle
   self:init(size) --particles initialization
   for _, line in ipairs(self.particles) do
@@ -56,11 +56,9 @@ function Map:new(size)
   self:updateCanvas()
 end
 
--- Here, we initialize the Tooltip
 function Map:initTooltip(mx, my)
   local particle = self:getParticle(mx, my)
   if particle then
-    -- text & tooltip construction
     local lines = {}
     local neighboursCount = particle:getNeighboursCount(self)
     table.insert(lines, string.format("index: %i", particle.index))
@@ -77,7 +75,7 @@ function Map:initTooltip(mx, my)
   end
 end
 
--- Here, we hard-define the logic for creating our map. The values ​​are chosen purely for convenience.
+-- Simple hardcoded map generation (temporary layout)
 function Map:init(size)
   self.particles = {}
   for y = 1, size, 1 do
@@ -184,7 +182,7 @@ function Map:swapParticles(p1, p2)
   end
 end
 
--- We check if the mouse is hover the particle
+-- Returns true if mouse is inside the map grid
 function Map:mouseIsHover(mx, my)
   local isHover = false
   if mx >= self.psize and mx <= (#self.particles[1] + 1) * self.psize and
