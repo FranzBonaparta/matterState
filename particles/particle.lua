@@ -60,8 +60,6 @@ function Particle:new(x, y)
   self.isBurning = false -- Define if the particule is burning or not
   self.time = math.random() * 10
   self.stable = false    -- Determine if the particule need to move
-  self.toolTip = Tooltip("", self, 0.2)
-  self.isHovered = false -- Activate or desactivate the Tooltip
   self.timer = 1         -- Limits updates to save calculations.
 
   self.integrity = 100   -- If this number reaches zero, the particle,
@@ -160,7 +158,10 @@ function Particle:getNeighbour(map, direction)
       { y - 1, y + 1, y, y, y - 1, y - 1, y + 1, y + 1 }
   for i = 1, #directions, 1 do
     if direction == directions[i] then
-      return map:getParticle(nx[i], ny[i])
+      if map.particles[ny[i]] and map.particles[ny[i]][nx[i]] then
+        return map.particles[ny[i]][nx[i]]
+      end
+      
     end
   end
   return nil
@@ -171,24 +172,6 @@ function Particle:getNeighboursCount(map)
   local neighbours = self:getNeighbours(map)
   local count = #neighbours
   return count
-end
-
--- Here, we initialize the Tooltip
-function Particle:initTooltip(map)
-  local a, b = self:getCoords()
-  -- text & tooltip construction
-  local lines = {}
-  local neighboursCount = self:getNeighboursCount(map)
-  table.insert(lines, string.format("index: %i", self.index))
-  table.insert(lines, string.format("[%i %i]", a, b))
-  table.insert(lines, string.format("Avg Temp: %.1f°C", self.temperature))
-  table.insert(lines, string.format("NeighboursAmount: %i", neighboursCount))
-  table.insert(lines, string.format("integrity: %i, density: %.2f", self.integrity, self.chemicalProperties.density))
-  local stable = self.stable and "stable" or "unstable"
-  table.insert(lines, string.format("%s %s", self.name, stable))
-  table.insert(lines, string.format("%s", self.chemicalProperties.state))
-  local text = table.concat(lines, "\n")
-  self.toolTip:setText(text)
 end
 
 -- We check if the mouse is hover the particle
