@@ -63,7 +63,7 @@ function Particle:new(x, y)
   self.integrity = 100   -- If this number reaches zero, the particle,
   -- if it can, decomposes into another substance.
   self.lastSwapIndex = self.index
-  self.psystem = nil -- Löve's ParticleSystem
+  --self.psystem = nil -- Löve's ParticleSystem desactivated for now
   particleIndex = particleIndex + 1
   self.neighbours = {}
 end
@@ -180,18 +180,6 @@ function Particle:mouseIsHover(mx, my)
   return isHover
 end
 
-function Particle:draw()
-  love.graphics.setColor(1, 0, 0)
-  love.graphics.rectangle("line", self.px, self.py, self.size, self.size)
-  love.graphics.setColor(self.color[1], self.color[2], self.color[3])
-  love.graphics.rectangle("fill", self.px, self.py, self.size, self.size)
-  -- this draws smoke if the particle is burning
-  if self.psystem then
-    love.graphics.draw(self.psystem, self.px, self.py)
-  end
-  love.graphics.setColor(1, 1, 1)
-end
-
 -- This allows us to ignite a particle with the mouse
 function Particle:mousepressed(mx, my, button)
   if self:mouseIsHover(mx, my) and button == 1 then
@@ -225,10 +213,10 @@ function Particle:update(dt, map)
   end
   TemperatureManager.update(self, map, dt)
   -- If the particle has a ParticleSystem, it is updated.
-  if self.psystem then
+  --[[if self.psystem then
     self.psystem:update(dt)
     self.psystem:setEmitterLifetime(self.integrity)
-  end
+  end]]
 end
 
 return Particle

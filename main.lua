@@ -25,7 +25,7 @@ local Map = require("UI.map")
 local map = Map(80)
 local Palette = require("UI.palette")
 local palette = nil
-local Info=require("info")
+local Info = require("info")
 -- Function called only once at the beginning
 function love.load()
     -- Initialization of resources (images, sounds, variables)
@@ -48,11 +48,11 @@ end
 function love.draw()
     -- Everything that needs to be displayed passes here
     local startTime = love.timer.getTime()
-    --love.graphics.setColor(1, 1, 1)
-    map:draw()
     if palette then
         palette:draw()
     end
+    map:draw()
+
     love.graphics.setColor(1, 1, 1, 1)
     local endTime = love.timer.getTime()
     local text = string.format("%.4f ms", (endTime - startTime) * 1000)
