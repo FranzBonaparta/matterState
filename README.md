@@ -2,7 +2,7 @@
 
 ![Status](https://img.shields.io/badge/status-in_development-orange)
 ![License](https://img.shields.io/badge/license-GPLv3-blue)
-![Love2D](https://img.shields.io/badge/LÖVE-11.5-ff69b4)
+![Love2D](https://img.shields.io/badge/LÖVE-11.4-ff69b4)
 ![Issues Welcome](https://img.shields.io/badge/issues-welcome-brightgreen)
 
 💬 This project is **open-source** so others can **explore, reuse, and improve the code**.
