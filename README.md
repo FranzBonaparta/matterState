@@ -1,17 +1,29 @@
 # 🔥 MatterStates
 
+![Status](https://img.shields.io/badge/status-in_development-orange)
+![License](https://img.shields.io/badge/license-GPLv3-blue)
+![Love2D](https://img.shields.io/badge/LÖVE-11.5-ff69b4)
+![Issues Welcome](https://img.shields.io/badge/issues-welcome-brightgreen)
+
+💬 This project is **open-source** so others can **explore, reuse, and improve the code**.
+**Honest feedback** on architecture or usability is **always appreciated**.
+
 A **sandbox simulation** exploring **thermodynamics**, **material transitions**, and **elemental interactions** — all computed in real time with **Lua** and **LÖVE2D**.
 
 ---
 
-> ⚠️ **Development status:** actively evolving.  
+> ⚠️ **Development status:** actively evolving.
+> The display of particles has been transferred to the GPU, via Canvas, to lighten the workload on the CPU.
 > The core physics engine is functional, but most materials and reactions are still experimental.
+
+![matterStates demo](./assets/demo_matterstates.gif)
 
 ---
 
 ## 🌍 Overview
 
 **MatterStates** models how matter behaves and transforms under simple physical rules:
+
 - Each **cell** of the map represents a particle of matter.
 - Each particle has **temperature**, **state**, **stability**, and **chemical properties**.
 - Materials can **burn**, **melt**, **evaporate**, or **crumble** depending on local conditions.
@@ -50,6 +62,7 @@ Originally developed as an isolated simulation, MatterStates now also powers the
 - **Front-end:** rendered and updated by LÖVE’s real-time loop.  
 
 All materials follow the same update cycle but use different motion models:
+
 | State | Handler | Example materials |
 |--------|----------|-------------------|
 | solid | `didFall()` | Stone, Charcoal |
